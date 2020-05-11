@@ -24,6 +24,8 @@ let excludeString = excludePattern.reduce((acc, cv) => {
 	return acc + ' --exclude ' + cv;
 }, '');
 
+let watcherObj;
+
 config.appConfig.forEach((site) => {
 	let applicationFolders = [site.appName + '/', "shared/"];
 
@@ -33,7 +35,7 @@ config.appConfig.forEach((site) => {
 
 		let activeDirectorySyncs = {};
 
-		chokidar.watch(completeLocalSourceDir).on('all', (event, localFileDir) => {
+		watcherObj = chokidar.watch(completeLocalSourceDir).on('all', (event, localFileDir) => {
 
 			// only listen for these events for now.
 			if (event != 'addDir' && event != 'change' && event != 'add')
@@ -92,11 +94,15 @@ function syncFiles(localPath, completeTargetPath, isRecursive, callback) {
 	});
 }
 
-function getWeekDay(date) {
-	let days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+process.on('SIGINT', () => {
+	console.log("caught it");
 
-	return days[date.getDay()];
-}
+	watcherObj.close().then(() => {
+		console.log("Closed everything");
+		process.exit();
+	});
+});
+
 // One-liner for current directory
 // chokidar.watch(sourceDirectory).on('all', (event, path) => {
 // 	exec(`${rsyncLocation} -t ${path} ${targetUsername}@${targetHostname}:/home/webapps/${targetDirectory}/current/`, (error, stdout, stderr) => {
