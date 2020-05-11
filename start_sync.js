@@ -81,7 +81,7 @@ function syncFiles(localPath, completeTargetPath, isRecursive, callback) {
 
 	exec(`${config.rsyncLocation} ${optionsString} ${excludeString} ${localPath} ${completeTargetPath}`, (error, stdout, stderr) => {
 		// rsync with the -i option has some weird junk at the beginning of the file name. Just trim that off.
-		let formattedOutput = stdout.replace(/<.*\.\. /, '').trim();
+		let formattedOutput = stdout.replace(/<.*\.\. /g, '').trim();
 
 		if (formattedOutput)
 			console.log(formattedOutput);
