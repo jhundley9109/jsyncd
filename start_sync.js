@@ -4,39 +4,38 @@
 /*jshint esversion: 6 */
 /*jslint node: true */
 
-// const fsevents = require('fsevents');
-// console.log(__dirname)
-// const stop = fsevents.watch(__dirname, (path, flags, id) => {
-//   const info = fsevents.getInfo(path, flags, id);
-//   console.log(info)
-// }); // To start observation
-// stop();
 
 let config = require(process.env.HOME + '/.config/jsyncd/config');
 
+const Rsync = require('rsync');
 const chokidar = require('chokidar');
 const moment = require('moment');
-const exec = require('child_process').exec;
-
-let excludePattern = ['*.tmp', '*/node/*', '.auth'];
-
-let excludeString = excludePattern.reduce((acc, cv) => {
-	return acc + ' --exclude ' + cv;
-}, '');
 
 let watcherObj;
 
-config.appConfig.forEach((site) => {
-	let applicationFolders = [site.appName + '/', "shared/"];
+config.appConfig.forEach((syncConfig) => {
+  let applicationFolders = syncConfig.directories;
 
-	applicationFolders.forEach((apllicationFolder) => {
 
-		let completeLocalSourceDir = config.localDir + apllicationFolder;
+	applicationFolders.forEach((directoryConfig) => {
+		let completeLocalSourceDir = directoryConfig.localDir;
+		let completeTargetPath = directoryConfig.targetDir;
+		let excludePattern = directoryConfig.excludePattern || [];
 
 		let activeDirectorySyncs = {};
 
-		watcherObj = chokidar.watch(completeLocalSourceDir).on('all', (event, localFileDir) => {
+		let rsync = new Rsync();
+		rsync.flags('r', 't', 'O', 'i');
 
+		if (excludePattern.length)
+				rsync.exclude(excludePattern);
+
+		rsync.source(completeLocalSourceDir)
+		rsync.destination(syncConfig.targetUsername + '@' + syncConfig.server + ':' + completeTargetPath)
+
+		rsync.set('e', 'ssh -p ' + syncConfig.port + ' -i ' + syncConfig.identityFile)
+
+		watcherObj = chokidar.watch(completeLocalSourceDir).on('all', (event, localFileDir) => {
 			// only listen for these events for now.
 			if (event != 'addDir' && event != 'change' && event != 'add')
 			{
@@ -48,51 +47,25 @@ config.appConfig.forEach((site) => {
 				return;
 			}
 
+			console.log(moment().format('ddd MMMM D YYYY H:mm:ss') + ' Calling rsync for ' + completeLocalSourceDir);
 			activeDirectorySyncs[completeLocalSourceDir] = true;
 
-			// let targetFilename = localFileDir.replace(completeLocalSourceDir, '');
-			let completeTargetPath = getTargetFilePath(site);
-			// console.log("trying to sync ", localFileDir, completeLocalSourceDir);
-			syncFiles(completeLocalSourceDir, completeTargetPath, true, () => {
-
+			rsync.execute((error, code, cmd) => {
+				// we're done
 				activeDirectorySyncs[completeLocalSourceDir] = false;
+				console.log(moment().format('ddd MMMM D YYYY H:mm:ss') + ' Finished syncing ' + completeLocalSourceDir);
+				// console.log('rsync status', error, code, cmd)
+			}, (stdoutHandle) => {
+				// console.log("in stdout handle", stdoutHandle)
+				// process.stdout.prin
+				// rsync with the -i option has some weird junk at the beginning of the file name. Just trim that off.
+				let formattedOutput = stdoutHandle.toString().replace(/<.*\.\. /g, '').trim();
+				console.log(formattedOutput)
+				// console.log(moment().format('ddd MMMM D YYYY H:mm:ss') + ' Finished syncing ' + cmd);
 			});
 		});
 	});
 });
-
-function getTargetFilePath(site) {
-	return `${config.targetUsername}@${site.endpoint}:${config.remoteDir}${site.appName}/current/`;
-}
-
-function syncFiles(localPath, completeTargetPath, isRecursive, callback) {
-
-	console.log(moment().format('ddd MMMM D YYYY H:mm:ss') + ' Calling rsync for ' + localPath);
-	let options = [];
-
-	options.push('-r'); // recursive
-	options.push('-t'); // times
-	options.push('-O'); // but don't set directory times
-	// options.push('--progress'); // verbose
-	options.push('-i'); // itemized changes
-	// options.push('-v'); // verbose
-
-	let optionsString = options.join(' ');
-
-	exec(`${config.rsyncLocation} ${optionsString} ${excludeString} ${localPath} ${completeTargetPath}`, (error, stdout, stderr) => {
-		// rsync with the -i option has some weird junk at the beginning of the file name. Just trim that off.
-		let formattedOutput = stdout.replace(/<.*\.\. /g, '').trim();
-
-		if (formattedOutput)
-			console.log(formattedOutput);
-
-		console.log(moment().format('ddd MMMM D YYYY H:mm:ss') + ' Finished syncing ' + localPath);
-
-		if (typeof callback != 'undefined') {
-			callback();
-		}
-	});
-}
 
 process.on('SIGINT', () => {
 	console.log("caught it");
