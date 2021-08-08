@@ -14,8 +14,8 @@ let config = {
 			}
 		},
 		directories: [{
-			targetDir: '/var/some_project/',
 			localDir: '/home/user_name/git/some_project/',
+			targetDir: '/var/some_project/',
 			excludePattern: ['*.tmp', '*/node/*', '.auth', 'node_modules', '.git']
 		}],
 		chokidarOptions: {
