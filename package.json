@@ -1,6 +1,6 @@
 {
   "name": "jsyncd",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "dependencies": {
     "chokidar": "^3.5.2",
     "daemon": "^1.1.0",
