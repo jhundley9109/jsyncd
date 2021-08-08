@@ -1,6 +1,7 @@
 {
   "name": "jsyncd",
-  "version": "0.1.1",
+  "version": "0.1.2",
+  "description": "live monitor and dispatch rsync daemon",
   "dependencies": {
     "chokidar": "^3.5.2",
     "daemon": "^1.1.0",
@@ -8,11 +9,25 @@
     "nodemon": "^2.0.12",
     "rsync": "^0.6.1"
   },
+  "author": "Jacob Hundley <jhundley9109@gmail.com>",
   "bin": {
     "jsyncd": "./bin/index.js"
   },
   "scripts": {
     "test": "nodemon ./bin/index.js",
     "start": "node ./bin/index.js"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jhundley9109/jsyncd"
+  },
+  "homepage": "https://github.com/jhundley9109/jsyncd#readme",
+  "readmeFilename": "README.md",
+  "license": "MIT",
+  "keywords": [
+    "rsync",
+    "lsyncd",
+    "chokidar",
+    "file backup"
+  ]
 }

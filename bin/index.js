@@ -44,4 +44,6 @@ if (config.daemonize)
   require('daemon')({cwd: process.cwd()})
 }
 
+// process.title = `jsyncd ${configFilePath}`
+
 jsyncd.startSync(config);
