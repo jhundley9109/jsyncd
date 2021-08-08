@@ -41,7 +41,7 @@ Options are:
       - **targetUsername** ssh username if not configured with ~/.ssh/config.
       - **sshOptions** Configure a non-standard port and/or an private key file. Options must have name/value pairs that match name/values in the ssh manual. These options build the `rsync -e "ssh -i {/path/to/privkey} -p {port}"` command.
     - **directories** An array of objects that configure local -> target directory syncs.
-      - **source** Path to watch for changes and sync to `desitination`.
+      - **source** Path to watch for changes and sync to `destination`.
       - **destination** Path to where `rsync` should send the files.
       - **rsyncExcludePattern** (default `[]`) passed to the `rsync.exclude` function. This is not necessarily the same as `chokidar.ignored` as that can monitor directories higher up the path and sync files in a child directory, such as node_modules and cost a lot of unneeded syncing.
     - **chokidarWatchOptions** May be any supported `chokidar` options and passed as `options` to `chokidar.watch(paths, [options])`.
