@@ -1,11 +1,17 @@
 {
+  "name": "jsyncd",
+  "version": "0.1.0",
   "dependencies": {
     "chokidar": "^3.5.2",
     "moment": "^2.29.1",
     "nodemon": "^2.0.12",
     "rsync": "^0.6.1"
   },
+  "bin": {
+    "jsyncd": "./bin/index.js"
+  },
   "scripts": {
-    "start": "nodemon start_sync.js"
+    "test": "nodemon ./bin/index.js",
+    "start": "node ./bin/index.js"
   }
 }

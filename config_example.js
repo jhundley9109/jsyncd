@@ -3,6 +3,7 @@
 /*jslint node: true */
 
 let config = {
+	logFile: '/var/log/jsyncd/jsyncd.log',
 	appConfig: [{
 		hostConfig: {
 			hostname: 'localhost',
