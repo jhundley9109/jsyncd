@@ -25,7 +25,8 @@ let config = {
       // followSymlinks: true
     },
     // recommended a and i as defaults
-    rsyncFlags: ['a', 'O', 'i']
+    // recommend s if your files can have special characters
+    rsyncFlags: ['a', 'O', 'i', 's']
   }],
 }
 

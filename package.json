@@ -1,11 +1,10 @@
 {
   "name": "jsyncd",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "live monitor and dispatch rsync daemon",
   "dependencies": {
     "chokidar": "^3.5.2",
     "daemon": "^1.1.0",
-    "moment": "^2.29.1",
     "nodemon": "^2.0.12",
     "rsync": "^0.6.1"
   },
