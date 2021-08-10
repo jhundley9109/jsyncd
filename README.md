@@ -28,10 +28,10 @@ or place the config file in ~/.config/jsyncd/config.js and run with:
 $ jsyncd
 ```
 
-Note: The config file path should always be the last option passed to the command
-
 ## Options
--k --kill Kill all running instances of `jsyncd` and exit the program. Pass a truthy value to contiue the program. (-k=1)
+-k --kill Kill all running instances of `jsyncd` and exit the program. Pass a truthy value to kill any existing daemons and continue the program. (-k=1)
+
+Note: The config file path should always be the last option passed to the command
 
 ## Config File
 
@@ -62,6 +62,8 @@ Options are:
       - **rsyncExcludePattern** (default `[]`) passed to the `rsync.exclude` function. This is not necessarily the same as `chokidar.ignored` as that can monitor directories higher up the path and sync files in a child directory, such as node_modules and cost a lot of unneeded syncing.
     - **chokidarWatchOptions** May be any supported `chokidar` options and passed as `options` to `chokidar.watch(paths, [options])`.
     - **rsyncFlags** (default: `[]`) Passed to the `rsync.flags()` function.
+
+Note: `rsyncFlags`, `chokidarWatchOptions`, and `rsyncExcludePattern` can be placed at any level higher up the object to set as default. For instance, if all your hosts have the same `rsyncExcludePattern`, you can set that value at the `config.rsyncExcludePattern` level. However, setting that again at a `config.appConfig` or `config.appConfig.directories` level will override a higher up setting.
 
 ## Goals
 
