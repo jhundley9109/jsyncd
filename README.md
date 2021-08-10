@@ -17,6 +17,22 @@ Install with npm:
 ```
 $ npm install -g jsyncd
 ```
+
+If installed globally, simply run with:
+```
+$ jsyncd /path/to/config.js
+```
+or place the config file in ~/.config/jsyncd/config.js and run with:
+
+```
+$ jsyncd
+```
+
+Note: The config file path should always be the last option passed to the command
+
+## Options
+-k --kill Kill all running instances of `jsyncd` and exit the program. Pass a truthy value to contiue the program. (-k=1)
+
 ## Config File
 
 The configuration file is the core of instructing `jsyncd` how to sync what files from where to who and where. The configuration file is a javascript module that exports a variable called `config`.
