@@ -1,0 +1,12 @@
+{
+  "curly": true,
+  "node": true,
+  "esversion": 6,
+  "globalstrict": true,
+  "eqeqeq": true,
+  "undef": true,
+  "forin": true,
+  "devel": true,
+  "nonew": true,
+  "strict": true
+}

@@ -1,6 +1,6 @@
 # Jsyncd
 
-`jsyncd` is a daemon aimed at simplifying file changes and deploying `rsync` syncs to configured hosts.
+`jsyncd` is a daemon aimed at simplifying syncing file changes and deploying `rsync` syncs to configured hosts.
 
 ## Why?
 
