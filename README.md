@@ -20,9 +20,9 @@ $ npm install -g jsyncd
 
 If installed globally, simply run with:
 ```
-$ jsyncd /path/to/config.js
+$ jsyncd /path/to/config.mjs
 ```
-or place the config file in ~/.config/jsyncd/config.js and run with:
+or place the config file in ~/.config/jsyncd/config.mjs and run with:
 
 ```
 $ jsyncd
@@ -46,7 +46,7 @@ The basic structure is as follows:
   - Each **appConfig** has an array of directories. Multiple local directories can be synced to multiple destination directories.
   - Each **appConfig** can accept a full range of `chokidar` options instructing the program how/what directories to monitor for changes.
   - **rsyncFlags** option takes a full range of `rsync` flags instructing rsync on how to sync the files that are monitored by `chokidar`. Recommended to use at least '`a`' (archive) and '`i`' (itemized_changes for logging).
-A default config file can be placed in `~/.config/jsyncd/config.js`. A template can be found in `config_example.js`.
+A default config file can be placed in `~/.config/jsyncd/config.mjs`. A template can be found in `config_example.mjs`.
 
 Options are:
   - **logFile** Path to where STDOUT will be redirected. Required when `daemonize` is `true`.
