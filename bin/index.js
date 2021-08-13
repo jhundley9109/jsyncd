@@ -1,122 +1,117 @@
 #!/usr/bin/env node
-'use strict';
 
-const Jsyncd = require("../lib/start_sync");
-const fs = require('fs');
-const OptionParser = require('option-parser');
-const parser = new OptionParser();
-const find = require('find-process');
+import Jsyncd from '../lib/jsyncd.js';
+import OptionParser from 'option-parser';
+import find from 'find-process';
 
-let killOption = parser.addOption('k', 'kill', 'Kill already running jsyncd processes')
-  .argument('Continue[truthy]', false);
+parseOptionsAndRunProgram();
 
-parser.addOption('h', 'help', 'Display this help message')
-  .action(parser.helpAction())
-;
+function parseOptionsAndRunProgram() {
+  const parser = new OptionParser();
 
-const unparsed = parser.parse();
+  let killOption = parser.addOption('k', 'kill', 'Kill already running jsyncd processes')
+    .argument('Continue[truthy]', false);
 
-let shouldContinue = parser.getopt().k;
+  parser.addOption('h', 'help', 'Display this help message')
+    .action(parser.helpAction());
 
-if (shouldContinue !== undefined)
-{
-  killRunningProcesses(shouldContinue);
-}
-else
-{
-  parseConfigFileAndStartProcess(shouldContinue);
-}
+  const unparsed = parser.parse();
 
-function parseConfigFileAndStartProcess()
-{
   let configFilePath = unparsed.pop();
 
   if (!configFilePath)
   {
-    configFilePath = `${process.env.HOME}/.config/jsyncd/config.js`;
+    configFilePath = `${process.env.HOME}/.config/jsyncd/config.mjs`;
   }
 
-  let fileExists = fs.existsSync(configFilePath);
+  const continueAfterKillProcess = killOption.value();
 
-  if (!fileExists)
+  if (continueAfterKillProcess !== undefined)
   {
-    console.log(`Missing config file! Please place a config file at ${configFilePath}`);
-    process.exit();
+    killRunningProcesses().then(() => {
+
+      if (!continueAfterKillProcess)
+      {
+        console.log('Ending process. Pass -k=1 to kill any other running daemons and continue starting sync');
+        process.exit();
+      }
+
+      parseConfigFileAndStartProcess(configFilePath);
+    });
   }
+  else
+  {
+    parseConfigFileAndStartProcess(configFilePath);
+  }
+}
 
-  let config = {};
+function parseConfigFileAndStartProcess(configFilePath) {
+  import(configFilePath).then((configObj) => {
+    const config = configObj.default;
 
-  try {
-    config = require(configFilePath);
     console.log(`Read configuration file: ${configFilePath}`);
-  }
-  catch (err) {
-    console.log(`Problem reading or parsing configuration file. Failed with error: ${err}`);
-    process.exit();
-  }
 
-  if (config.daemonize)
-  {
-    if (!config.logFile)
+    if (config.daemonize)
     {
-      console.log('logFile option required when using daemonize');
-      process.exit();
+      if (!config.logFile)
+      {
+        console.log('logFile option required when using daemonize');
+        process.exit();
+      }
+
+      console.log(`Going to detach process for jsyncd. Program output can be found at '${config.logFile}'`);
+
+      // pass cwd to work around an issue with the library passing the function process.cwd instead of the result
+      require('daemon')({cwd: process.cwd()});
     }
 
-    console.log(`Going to detcah process for jsyncd. Program output can be found at '${config.logFile}'`);
+    process.title = `jsyncd ${configFilePath}`;
 
-    // pass cwd to work around an issue with the library passing the function process.cwd instead of the result
-    require('daemon')({cwd: process.cwd()});
-  }
+    const jsyncd = new Jsyncd(config);
 
-  process.title = `jsyncd ${configFilePath}`;
+    jsyncd.startSync().catch((err) => {
+      jsyncd.sendToLog(err);
+      process.exit(1);
+    });
 
-  const jsyncd = new Jsyncd(config);
-  jsyncd.startSync();
+    process.on('SIGINT', () => {
+      jsyncd.sendToLog(jsyncd.getTimestamp() + ' Caught SIGINT. Terminating...');
+      process.exit();
+    });
 
-  process.on('SIGINT', () => {
-    jsyncd.sendToLog(jsyncd.getTimestamp() + ' Caught SIGINT. Terminating...');
-    process.exit();
-  });
-
-  process.on('SIGTERM', () => {
-    jsyncd.sendToLog(jsyncd.getTimestamp() + ' Caught SIGTERM. Terminating...');
-    process.exit();
+    process.on('SIGTERM', () => {
+      jsyncd.sendToLog(jsyncd.getTimestamp() + ' Caught SIGTERM. Terminating...');
+      process.exit();
+    });
+  }).catch((err) => {
+    console.log(`Problem reading or parsing configuration file. Failed with error: ${err}`);
+    process.exit(1);
   });
 }
 
-function killRunningProcesses(shouldContinue)
+async function killRunningProcesses()
 {
   const pid = process.pid;
 
-  find('name', 'jsyncd').then((processList) => {
-    for (let processInfo of processList)
-    {
-      let runningProcessPid = processInfo.pid;
-
-      if (runningProcessPid === pid)
-      {
-        continue;
-      }
-
-      if (processInfo.cmd.includes('nodemon'))
-      {
-        continue;
-      }
-
-      console.log(`Killing a running jsyncd process. pid: ${runningProcessPid}`);
-      process.kill(processInfo.pid);
-    }
-  }).catch((err) => {
-    console.log("error?", err);
-  }).then(() => {
-
-    if (!shouldContinue)
-    {
-      console.log('Ending process. Pass -k=1 to kill any other running daemons and continue starting sync');
-      process.exit();
-    }
-
-    parseConfigFileAndStartProcess();
+  const processList = await find('name', 'jsyncd ').catch((err) => {
+    console.log(`Error getting process list: ${err}`);
   });
+
+  for (let processInfo of processList)
+  {
+    let runningProcessPid = processInfo.pid;
+
+    if (runningProcessPid === pid)
+    {
+      continue;
+    }
+
+    if (processInfo.cmd.includes('nodemon'))
+    {
+      continue;
+    }
+
+    console.log(`Killing a running jsyncd process. pid: ${runningProcessPid}`);
+    process.kill(processInfo.pid);
+  }
 }

@@ -1,12 +1,12 @@
 {
   "name": "jsyncd",
-  "version": "0.1.6",
+  "version": "0.1.7",
+  "type": "module",
   "description": "live monitor and dispatch rsync daemon",
   "dependencies": {
     "chokidar": "^3.5.2",
     "daemon": "^1.1.0",
     "find-process": "^1.4.4",
-    "nodemon": "^2.0.12",
     "option-parser": "^1.0.1",
     "rsync": "^0.6.1"
   },
@@ -30,5 +30,9 @@
     "lsyncd",
     "chokidar",
     "file backup"
-  ]
+  ],
+  "devDependencies": {
+    "nodemon": "^2.0.12",
+    "eslint": "^7.32.0"
+  }
 }
