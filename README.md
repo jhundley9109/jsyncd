@@ -48,16 +48,16 @@ A default config file can be placed in `~/.config/jsyncd/config.mjs`. A template
 - **logFile** - (default: `/var/log/jsyncd/jsyncd.log`) Path to where STDOUT will be redirected. Required when `daemonize` is `true`.
 - **daemonize** - (default: `false`) Detach process and run program as daemon.
 - **logRsyncCommand** - (default: `false`) Output the generated rsync command. Can help with debugging.
-- **appConfig** - (default: [{}]) An array of objects where each `appConfig` defines a host -> remote server connection and path monitoring options.
-  - **hostConfigOptions** - (default: {}) Optional: Configure a remote server connection options. Omitting this object will result in only attempting local folder syncing.
-    - **hostname** - (default: '') IP Address or domain of target.
-    - **targetUsername** - (default: '') ssh username if not configured with ~/.ssh/config.
-    - **sshOptions** - (default: {}) Configure a non-standard port and/or an private key file. Options must have name/value pairs that match name/values in the ssh manual. These options build the `rsync -e "ssh -i {/path/to/privkey} -p {port}"` command.
-  - **directories** - (default: [{}]) An array of objects that configure local -> target directory syncs.
-    - **source** - Path to watch for changes and sync to `destination`. A trailing slash on the directory will sync the contents such as `/path/*`. No trailing slash copies the entire directory.
-    - **destination** - Path to where `rsync` should send the files.
+- **appConfig** - (default: `[{}]`) An array of objects where each `appConfig` defines a host -> remote server connection and path monitoring options.
+  - **hostConfigOptions** - (default: `{}`) Optional: Configure a remote server connection options. Omitting this object will result in only attempting local folder syncing.
+    - **hostname** - (default: `''`) IP Address or domain of target.
+    - **targetUsername** - (default: `''`) ssh username if not configured with ~/.ssh/config.
+    - **sshOptions** - (default: `{}`) Configure a non-standard port and/or an private key file. Options must have name/value pairs that match name/values in the ssh manual. These options build the `rsync -e "ssh -i {/path/to/privkey} -p {port}"` command.
+  - **directories** - (default: `[{}]`) An array of objects that configure local -> target directory syncs.
+    - **source** - (required) Path to watch for changes and sync to `destination`. A trailing slash on the directory will sync the contents such as `/path/*`. No trailing slash copies the entire directory.
+    - **destination** - (required) Path to where `rsync` should send the files.
     - **rsyncExcludePattern** - (default: `[]`) passed to the `rsync.exclude` function. This is not necessarily the same as `chokidar.ignored` as that can monitor directories higher up the path and sync files in a child directory, such as node_modules folders and run a lot of undesired syncing.
-  - **chokidarWatchOptions** - (default: {}) May be any supported `chokidar` options and passed as `options` to `chokidar.watch(paths, [options])`. Common parameters may be `ignoreInitial` and `ignored` though there are many other options such as setting up polling instead of event based callbacks.
+  - **chokidarWatchOptions** - (default: `{}`) May be any supported `chokidar` options and passed as `options` to `chokidar.watch(paths, [options])`. Common parameters may be `ignoreInitial` and `ignored` though there are many other options such as setting up polling instead of event based callbacks.
   - **rsyncFlags** - (default: `[]`) Passed to the `rsync.flags()` function. Typical defaults include `a` for archive and `i` to log individual files as they sync to the `config.logFile`.
 
 Note: `rsyncFlags`, `chokidarWatchOptions`, and `rsyncExcludePattern` can cascade down the objects. For instance, if all your hosts have the same `rsyncExcludePattern`, you can set that value at the `config.rsyncExcludePattern` level. However, setting that again at a `config.appConfig` or `config.appConfig.directories` level will override a higher up setting.
