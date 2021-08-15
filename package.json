@@ -20,6 +20,7 @@
   },
   "scripts": {
     "test": "nodemon ./bin/index.js",
+    "test_kill": "nodemon ./bin/index.js -k=1",
     "start": "node ./bin/index.js"
   },
   "repository": {

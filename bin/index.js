@@ -70,6 +70,7 @@ function parseConfigFileAndStartProcess(configFilePath) {
     const jsyncd = new Jsyncd(config);
 
     jsyncd.startSync().catch((err) => {
+      jsyncd.sendToLog('Top level error, exiting the program. Exiting with error:');
       jsyncd.sendToLog(err);
       process.exit(1);
     });
@@ -84,7 +85,8 @@ function parseConfigFileAndStartProcess(configFilePath) {
       process.exit();
     });
   }).catch((err) => {
-    console.log(`Problem reading or parsing configuration file. Failed with error: ${err}`);
+    console.log(`Problem reading or parsing configuration file: ${configFilePath}.`);
+    console.log(`Failed with error: `, err);
     process.exit(1);
   });
 }

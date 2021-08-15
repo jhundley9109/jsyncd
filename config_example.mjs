@@ -10,7 +10,7 @@ let config = {
   },
   logRsyncCommand: false,
   appConfig: [{
-    hostConfig: {
+    hostConfigOptions: {
       hostname: 'localhost',
       targetUsername: 'user_name',
       sshOptions: {
