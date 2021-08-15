@@ -6,7 +6,7 @@
 
 - Configure multiple apps to sync to various local and remote directories.
 - Goal to support MacOS, Windows, and Linux by using `Chokidar` as a unified file monitoring watcher.
-- More simple and expandalbe configurations options when compared to `Lsyncd`.
+- More simple and expandable configurations options when compared to `Lsyncd`.
 
 ## Getting started
 
