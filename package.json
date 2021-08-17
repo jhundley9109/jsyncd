@@ -2,9 +2,9 @@
   "name": "jsyncd",
   "version": "0.3.0",
   "type": "module",
-  "description": "live monitor and dispatch rsync daemon",
+  "description": "live file monitor and rsync daemon",
   "dependencies": {
-    "@jhundley/rsync": "jhundley9109/rsync#master",
+    "rsync": "jhundley9109/rsync#rsync_pull_request",
     "chalk": "^4.1.2",
     "chokidar": "^3.5.2",
     "daemon": "^1.1.0",
