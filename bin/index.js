@@ -3,6 +3,7 @@
 import Jsyncd from '../lib/jsyncd.js';
 import OptionParser from 'option-parser';
 import find from 'find-process';
+import chalk from 'chalk';
 
 parseOptionsAndRunProgram();
 
@@ -32,7 +33,7 @@ function parseOptionsAndRunProgram() {
 
       if (!continueAfterKillProcess)
       {
-        console.log('Ending process. Pass -k=1 to kill any other running daemons and continue starting sync');
+        console.log(chalk.red('Ending process. Pass -k=1 to kill any other running daemons and continue starting sync'));
         process.exit();
       }
 
@@ -49,17 +50,17 @@ function parseConfigFileAndStartProcess(configFilePath) {
   import(configFilePath).then((configObj) => {
     const config = configObj.default;
 
-    console.log(`Read configuration file: ${configFilePath}`);
+    console.log(chalk.green(`Read configuration file: ${configFilePath}`));
 
     if (config.daemonize)
     {
       if (!config.logFile)
       {
-        console.log('logFile option required when using daemonize');
+        console.log(chalk.red('logFile option required when using daemonize'));
         process.exit();
       }
 
-      console.log(`Going to detach process for jsyncd. Program output can be found at '${config.logFile}'`);
+      console.log(chalk.yellow(`Going to detach process for jsyncd. Program output can be found at '${config.logFile}'`));
 
       // pass cwd to work around an issue with the library passing the function process.cwd instead of the result
       require('daemon')({cwd: process.cwd()});
@@ -70,23 +71,23 @@ function parseConfigFileAndStartProcess(configFilePath) {
     const jsyncd = new Jsyncd(config);
 
     jsyncd.startSync().catch((err) => {
-      jsyncd.sendToLog('Top level error, exiting the program. Exiting with error:');
+      jsyncd.sendErrorToLog('Top level error, exiting the program. Exiting with error:');
       jsyncd.sendToLog(err);
       process.exit(1);
     });
 
     process.on('SIGINT', () => {
-      jsyncd.sendToLog(jsyncd.getTimestamp() + ' Caught SIGINT. Terminating...');
+      jsyncd.sendWarningToLog(jsyncd.getTimestamp() + ' Caught SIGINT. Terminating...');
       process.exit();
     });
 
     process.on('SIGTERM', () => {
-      jsyncd.sendToLog(jsyncd.getTimestamp() + ' Caught SIGTERM. Terminating...');
+      jsyncd.sendWarningToLog(jsyncd.getTimestamp() + ' Caught SIGTERM. Terminating...');
       process.exit();
     });
   }).catch((err) => {
-    console.log(`Problem reading or parsing configuration file: ${configFilePath}.`);
-    console.log(`Failed with error: `, err);
+    console.log(chalk.red(`Problem reading or parsing configuration file: ${configFilePath}.`));
+    console.log('Failed with error: ', err);
     process.exit(1);
   });
 }
@@ -113,7 +114,7 @@ async function killRunningProcesses()
       continue;
     }
 
-    console.log(`Killing a running jsyncd process. pid: ${runningProcessPid}`);
+    console.log(chalk.orange(`Killing a running jsyncd process. pid: ${runningProcessPid}`));
     process.kill(processInfo.pid);
   }
 }
