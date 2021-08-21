@@ -4,7 +4,7 @@
 
 ## Why?
 
-- Configure multiple apps to sync to various local and remote directories.
+- Configure multiple apps to sync to various local and/or remote directories.
 - Goal to support MacOS, Windows, and Linux by using `Chokidar` as a unified file monitoring watcher.
 - More simple and expandable configurations options when compared to `Lsyncd`.
 
@@ -32,7 +32,7 @@ jsyncd
 
 ```options
 -k, --kill      Kill all running instances of `jsyncd` and exit the program.
-                Pass truthy value to continue program.
+                Pass truthy value to continue program. [-k=1]
 ```
 
 ## Config File
@@ -48,23 +48,30 @@ A default config file can be placed in `~/.config/jsyncd/config.mjs`. A template
 - **logFile** - (default: `/var/log/jsyncd/jsyncd.log`) Path to where STDOUT will be redirected. Required when `daemonize` is `true`.
 - **daemonize** - (default: `false`) Detach process and run program as daemon.
 - **logRsyncCommand** - (default: `false`) Output the generated rsync command. Can help with debugging.
-- **appConfig** - (default: `[{}]`) An array of objects where each `appConfig` defines a host -> remote server connection and path monitoring options.
-  - **hostConfigOptions** - (default: `{}`) Optional: Configure a remote server connection options. Omitting this object will result in only attempting local folder syncing.
-    - **hostname** - (default: `''`) IP Address or domain of target.
-    - **targetUsername** - (default: `''`) ssh username if not configured with ~/.ssh/config.
-    - **sshOptions** - (default: `{}`) Configure a non-standard port and/or an private key file. Options must have name/value pairs that match name/values in the ssh manual. These options build the `rsync -e "ssh -i {/path/to/privkey} -p {port}"` command.
-  - **directories** - (default: `[{}]`) An array of objects that configure local -> target directory syncs.
+- **rsyncBuildOptions** - (default: `{}`) These are key value pairs passed to the `Rsync.build` function. The ones provided here are for example. All options from rsync are supported.
+  - **flags** - (default: `''` OR `[]`) Optional: pass to the `Rsync.flags`. Typical defaults may include `a` for archive and `i` to log individual files as they sync to the `config.logFile`.
+  - **exclude** - (default: `[]`) Optional: passed to the `Rsync.exclude` function. Folders and files for rsync to ignore under the `source` directory. Specifying here will be a default for all sources.
+- **appConfigs** - (default: `[{}]`) An array of objects where each `appConfig` defines a host -> remote server connection and path monitoring options.
+  - **name** - (default: '') Optional: Give your app a name. It'll show up in the logs when this app syncs to give you further insight on what is actively syncing.
+  - **rsyncBuildOptions** - (default: `{}`) Overide the global `Rsync.build` options for this app. Specified keys replace higher up keys.
+  - **targetHostname** - (default: `''`) Optional: IP Address or domain of target.
+  - **targetUsername** - (default: `''`) Optional: ssh username if not configured with ~/.ssh/config. `targetHostname` is required if  this this is specified.
+  - **sshOptions** - (default: `{}`) Optional: Configure a non-standard ssh options such as port and/or an private key file. Options must have key/value pairs that match key/values in the ssh manual. These options build the `rsync -e "ssh -i {/path/to/privkey} -p {port}"` command.
+  - **directories** - (default: `[{}]`) An array of objects that configure local -> target directory syncs. Each key/value pair in each element of the array is passed to `Rsync.build` and is an `rsyncBuildOptions` configuration.
     - **source** - (required) Path to watch for changes and sync to `destination`. A trailing slash on the directory will sync the contents such as `/path/*`. No trailing slash copies the entire directory.
     - **destination** - (required) Path to where `rsync` should send the files.
-    - **rsyncExcludePattern** - (default: `[]`) passed to the `rsync.exclude` function. This is not necessarily the same as `chokidar.ignored` as that can monitor directories higher up the path and sync files in a child directory, such as node_modules folders and run a lot of undesired syncing.
+    - **exclude** - (default: []) Optional: Specify specific exclude files/folders for this source to exclude.
   - **chokidarWatchOptions** - (default: `{}`) May be any supported `chokidar` options and passed as `options` to `chokidar.watch(paths, [options])`. Common parameters may be `ignoreInitial` and `ignored` though there are many other options such as setting up polling instead of event based callbacks.
-  - **rsyncFlags** - (default: `[]`) Passed to the `rsync.flags()` function. Typical defaults include `a` for archive and `i` to log individual files as they sync to the `config.logFile`.
 
-Note: `rsyncFlags`, `chokidarWatchOptions`, and `rsyncExcludePattern` can cascade down the objects. For instance, if all your hosts have the same `rsyncExcludePattern`, you can set that value at the `config.rsyncExcludePattern` level. However, setting that again at a `config.appConfig` or `config.appConfig.directories` level will override a higher up setting.
+Note: `rsyncBuildOptions` cascade from the top level down to the `directories` level with the most specific key/value pair being what is passed to `Rsync.build`. This allows you to set global defaults, app defaults, and override specific directories with unique settings. For instance, if all your hosts have the same `rsyncExcludePattern`, you can set that value at the `config.rsyncExcludePattern` level. However, setting that again at a `config.appConfig` or `config.appConfig.directories` level will override a higher up setting.
+
+Note2: `chokidarWatchOptions` cascades from the top level down to the `appConfigs` level with the most specific key/value paris being what is passed to `chokidar.watch(paths, [options])`
 
 ### Why not JSON?
 
-Using a javascript module with exports allows simplifying RegEx passed to **directories.rsyncExcludePattern** and **chokidarWatchOptions.ignored** since you can write native JS and do not have to worry about escaping.
+Using a javascript module with exports allows simplifying RegEx passed to `directories.rsyncExcludePattern` and `chokidarWatchOptions.ignored` since you can write native JS and do not have to worry about escaping.
+
+Additionally, you can write some logic/functions to dynamically generate configuration directives with plain javascript.
 
 ## Goals
 

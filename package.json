@@ -1,6 +1,6 @@
 {
   "name": "jsyncd",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "type": "module",
   "description": "live file monitor and rsync daemon",
   "dependencies": {
@@ -20,8 +20,8 @@
     "jsyncd": "./bin/index.js"
   },
   "scripts": {
-    "test": "nodemon ./bin/index.js",
-    "test_kill": "nodemon ./bin/index.js -k=1",
+    "test": "nodemon --watch . --watch ~/.config/jsyncd ./bin/index.js",
+    "test_kill": "nodemon --watch . --watch ~/.config/jsyncd ./bin/index.js -- -k=1",
     "start": "node ./bin/index.js"
   },
   "repository": {
