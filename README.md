@@ -10,7 +10,7 @@
 
 ## How
 
-This program works by moinitoring `config.appConfigs.directories.source` for file system changes and firing off a dynamically built `Rsync.build`.
+This program works by moinitoring `config.appConfigs.directories.source` for file system changes and firing off a dynamically built `Rsync.build` command.
 Once a file in the directory has been modified, a `chokidar` event is triggered which causes to an `rsync` process to sync from `source` to `destination`.
 
 ## Getting started
@@ -60,9 +60,9 @@ A default config file can be placed in `~/.config/jsyncd/config.mjs`. A template
   - **name** - (default: '') Optional: Give your app a name. It'll show up in the logs when this app syncs to give you further insight on what is actively syncing.
   - **rsyncBuildOptions** - (default: `{}`) Overide the global `Rsync.build` options for this app. Specified keys replace higher up keys.
   - **targetHostname** - (default: `''`) Optional: IP Address or domain of target.
-  - **targetUsername** - (default: `''`) Optional: ssh username if not configured with ~/.ssh/config. `targetHostname` is required if  this this is specified.
+  - **targetUsername** - (default: `''`) Optional: ssh username if not configured with ~/.ssh/config. `targetHostname` is required if this is specified.
   - **sshOptions** - (default: `{}`) Optional: Configure a non-standard ssh options such as port and/or an private key file. Options must have key/value pairs that match key/values in the ssh manual. These options build the `rsync -e "ssh -i {/path/to/privkey} -p {port}"` command.
-  - **directories** - (default: `[{}]`) An array of objects that configure local -> target directory syncs. Each key/value pair in each element of the array is passed to `Rsync.build` and is an `rsyncBuildOptions` configuration.
+  - **directories** - (default: `[{}]`) An array of objects that configure local -> target directory syncs. Each key/value pair in each element of each object is passed to `Rsync.build` and is an `rsyncBuildOptions` configuration.
     - **source** - (required) Path to watch for changes and sync to `destination`. A trailing slash on the directory will sync the contents such as `/path/*`. No trailing slash copies the entire directory.
     - **destination** - (required) Path to where `rsync` should send the files.
     - **exclude** - (default: []) Optional: Specify specific exclude files/folders for this source to exclude.

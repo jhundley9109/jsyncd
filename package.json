@@ -1,10 +1,10 @@
 {
   "name": "jsyncd",
-  "version": "0.4.2",
+  "version": "0.4.4",
   "type": "module",
   "description": "live file monitor and rsync daemon",
   "dependencies": {
-    "rsync": "jhundley9109/rsync#rsync_pull_request",
+    "rsync": "git+https://github.com/jhundley9109/rsync",
     "chalk": "^4.1.2",
     "chokidar": "^3.5.2",
     "daemon": "^1.1.0",
