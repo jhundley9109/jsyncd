@@ -8,6 +8,11 @@
 - Goal to support MacOS, Windows, and Linux by using `Chokidar` as a unified file monitoring watcher.
 - More simple and expandable configurations options when compared to `Lsyncd`.
 
+## How
+
+This program works by moinitoring `config.appConfigs.directories.source` for file system changes and firing off a dynamically built `Rsync.build`.
+Once a file in the directory has been modified, a `chokidar` event is triggered which causes to an `rsync` process to sync from `source` to `destination`.
+
 ## Getting started
 
 Install with npm:
