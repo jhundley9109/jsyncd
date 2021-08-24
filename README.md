@@ -52,7 +52,7 @@ A default config file can be placed in `~/.config/jsyncd/config.mjs`. A template
 
 - **logFile** - (default: `/var/log/jsyncd/jsyncd.log`) Path to where STDOUT will be redirected. Required when `daemonize` is `true`.
 - **daemonize** - (default: `false`) Detach process and run program as daemon.
-- **logRsyncCommand** - (default: `false`) Output the generated rsync command. Can help with debugging.
+- **debug** - (default: `false`) Output the generated rsync command. Can help with debugging the `Rsync.build` command.
 - **rsyncBuildOptions** - (default: `{}`) These are key value pairs passed to the `Rsync.build` function. The ones provided here are for example. All options from rsync are supported.
   - **flags** - (default: `''` OR `[]`) Optional: pass to the `Rsync.flags`. Typical defaults may include `a` for archive and `i` to log individual files as they sync to the `config.logFile`.
   - **exclude** - (default: `[]`) Optional: passed to the `Rsync.exclude` function. Folders and files for rsync to ignore under the `source` directory. Specifying here will be a default for all sources.

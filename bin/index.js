@@ -1,72 +1,104 @@
 #!/usr/bin/env node
 
 import Jsyncd from '../lib/jsyncd.js';
-import OptionParser from 'option-parser';
 import find from 'find-process';
 import chalk from 'chalk';
+import * as fs from 'fs';
+import appRoot from 'app-root-path';
+import daemon from 'daemon';
+import OptionParser from 'option-parser';
+
+const processName = 'jsyncd';
+const defaultConfigFilePath = `${process.env.HOME}/.config/${processName}/config.mjs`;
 
 parseOptionsAndRunProgram();
 
 function parseOptionsAndRunProgram() {
-  const parser = new OptionParser();
+  const optionParser = new OptionParser();
 
-  let killOption = parser.addOption('k', 'kill', 'Kill already running jsyncd processes')
-    .argument('Continue[truthy]', false);
+  optionParser.addOption('l', 'log', 'Log file path', 'logFile')
+    .argument('FILE', true);
 
-  parser.addOption('h', 'help', 'Display this help message')
-    .action(parser.helpAction());
+  optionParser.addOption('k', 'kill', `Kill any running ${processName} processes and exit, true value continues program`, 'kill')
+    .argument('CONTINUE', false);
 
-  const unparsed = parser.parse();
+  optionParser.addOption('h', 'help', 'Display this help message')
+    .action(optionParser.helpAction(`[Options] <ConfigFile>\n
+If <ConfigFile> is not supplied, defaults to '${defaultConfigFilePath}'
+Command line options override settings defined in <ConfigFile>`));
+
+  optionParser.addOption('v', 'version', 'Display version information and exit', 'version');
+  optionParser.addOption('d', 'daemon', 'Detach and daemonize the process', 'daemon');
+  optionParser.addOption('i', 'ignore', 'Pass `ignoreInitial` to `chokidarWatchOptions`, skips startup sync', 'ignoreInitial');
+  optionParser.addOption('D', 'debug', 'Log extra information about the generated `Rsync.build` command', 'debug');
+
+  let unparsed;
+
+  try {
+    unparsed = optionParser.parse();
+  } catch (err) {
+    console.log(`Error parsing cli options: ${err.message}`);
+    process.exit();
+  }
+
+  if (optionParser.version.value()) {
+    const {version} = JSON.parse(fs.readFileSync(`${appRoot.path}/package.json`));
+    console.log(`${processName} version ${version}`);
+    process.exit();
+  }
 
   let configFilePath = unparsed.pop();
 
-  if (!configFilePath)
-  {
-    configFilePath = `${process.env.HOME}/.config/jsyncd/config.mjs`;
+  if (!configFilePath) {
+    configFilePath = defaultConfigFilePath;
   }
 
-  const continueAfterKillProcess = killOption.value();
+  const continueAfterKillProcess = optionParser.kill.value();
 
-  if (continueAfterKillProcess !== undefined)
-  {
+  if (continueAfterKillProcess !== undefined) {
     killRunningProcesses().then(() => {
 
-      if (!continueAfterKillProcess)
-      {
-        console.log(chalk.red('Ending process. Pass -k=1 to kill any other running daemons and continue starting sync'));
+      if (!continueAfterKillProcess) {
+        console.log(chalk.red('Ending process... Pass -k=1 to kill any other running daemons and continue starting sync'));
         process.exit();
       }
 
-      parseConfigFileAndStartProcess(configFilePath);
+      parseConfigFileAndStartProcess(configFilePath, optionParser);
     });
-  }
-  else
-  {
-    parseConfigFileAndStartProcess(configFilePath);
+  } else {
+    parseConfigFileAndStartProcess(configFilePath, optionParser);
   }
 }
 
-function parseConfigFileAndStartProcess(configFilePath) {
+function parseConfigFileAndStartProcess(configFilePath, optionParser) {
   import(configFilePath).then((configObj) => {
     const config = configObj.default;
 
     console.log(chalk.green(`Read configuration file: ${configFilePath}`));
 
-    if (config.daemonize)
-    {
-      if (!config.logFile)
-      {
-        console.log(chalk.red('logFile option required when using daemonize'));
+    config.logFile = optionParser.logFile.value() || config.logFile;
+
+    if (optionParser.ignoreInitial.value() !== undefined) {
+      config.chokidarWatchOptions.ignoreInitial = optionParser.ignoreInitial.value();
+    }
+
+    if (optionParser.debug.value() !== undefined) {
+      config.debug = optionParser.debug.value();
+    }
+
+    if (optionParser.daemon.value() || config.daemonize) {
+      if (!config.logFile) {
+        console.log(chalk.red('-l, --log option required when using daemonize'));
         process.exit();
       }
 
-      console.log(chalk.yellow(`Going to detach process for jsyncd. Program output can be found at '${config.logFile}'`));
+      console.log(chalk.yellow(`Going to detach process for ${processName}. Program output can be found at '${config.logFile}'`));
 
       // pass cwd to work around an issue with the library passing the function process.cwd instead of the result
-      require('daemon')({cwd: process.cwd()});
+      daemon({cwd: process.cwd()});
     }
 
-    process.title = `jsyncd ${configFilePath}`;
+    process.title = `${processName} ${configFilePath}`;
 
     const jsyncd = new Jsyncd(config);
 
@@ -92,29 +124,25 @@ function parseConfigFileAndStartProcess(configFilePath) {
   });
 }
 
-async function killRunningProcesses()
-{
+async function killRunningProcesses() {
   const pid = process.pid;
 
-  const processList = await find('name', 'jsyncd ').catch((err) => {
+  const processList = await find('name', `${processName} `).catch((err) => {
     console.log(`Error getting process list: ${err}`);
   });
 
-  for (let processInfo of processList)
-  {
+  for (let processInfo of processList) {
     let runningProcessPid = processInfo.pid;
 
-    if (runningProcessPid === pid)
-    {
+    if (runningProcessPid === pid) {
       continue;
     }
 
-    if (processInfo.cmd.includes('nodemon'))
-    {
+    if (processInfo.cmd.includes('nodemon')) {
       continue;
     }
 
-    console.log(chalk.orange(`Killing a running jsyncd process. pid: ${runningProcessPid}`));
+    console.log(chalk.yellow(`Killing a running ${processName} process. pid: ${runningProcessPid}`));
     process.kill(processInfo.pid);
   }
 }

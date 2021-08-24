@@ -1,9 +1,10 @@
 {
   "name": "jsyncd",
-  "version": "0.4.5",
+  "version": "0.4.6",
   "type": "module",
   "description": "live file monitor and rsync daemon",
   "dependencies": {
+    "app-root-path": "^3.0.0",
     "chalk": "^4.1.2",
     "chokidar": "^3.5.2",
     "daemon": "^1.1.0",

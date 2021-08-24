@@ -1,7 +1,7 @@
 let config = {
   logFile: '/var/log/jsyncd/jsyncd.log',
   daemonize: false,
-  logRsyncCommand: false,
+  debug: false,
   chokidarOptions: {
     ignoreInitial: true,
     ignored: [/ignore_default_folder_for_all_apps/, /\.git/],
