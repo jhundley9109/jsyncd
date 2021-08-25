@@ -4,7 +4,6 @@ import Jsyncd from '../lib/jsyncd.js';
 import find from 'find-process';
 import chalk from 'chalk';
 import * as fs from 'fs';
-import appRoot from 'app-root-path';
 import daemon from 'daemon';
 import OptionParser from 'option-parser';
 
@@ -23,14 +22,14 @@ function parseOptionsAndRunProgram() {
     .argument('CONTINUE', false);
 
   optionParser.addOption('h', 'help', 'Display this help message')
-    .action(optionParser.helpAction(`[Options] <ConfigFile>\n
+    .action(optionParser.helpAction(`[Options] [<ConfigFile>]\n
 If <ConfigFile> is not supplied, defaults to '${defaultConfigFilePath}'
 Command line options override settings defined in <ConfigFile>`));
 
   optionParser.addOption('v', 'version', 'Display version information and exit', 'version');
   optionParser.addOption('d', 'daemon', 'Detach and daemonize the process', 'daemon');
   optionParser.addOption('i', 'ignore', 'Pass `ignoreInitial` to `chokidarWatchOptions`, skips startup sync', 'ignoreInitial');
-  optionParser.addOption('D', 'debug', 'Log extra information about the generated `Rsync.build` command', 'debug');
+  optionParser.addOption('D', 'debug', 'Log the generated `Rsync.build` command', 'debug');
 
   let unparsed;
 
@@ -42,7 +41,8 @@ Command line options override settings defined in <ConfigFile>`));
   }
 
   if (optionParser.version.value()) {
-    const {version} = JSON.parse(fs.readFileSync(`${appRoot.path}/package.json`));
+    let packageJsonPath = new URL('../package.json', import.meta.url);
+    const {version} = JSON.parse(fs.readFileSync(packageJsonPath));
     console.log(`${processName} version ${version}`);
     process.exit();
   }
@@ -119,7 +119,7 @@ function parseConfigFileAndStartProcess(configFilePath, optionParser) {
     });
   }).catch((err) => {
     console.log(chalk.red(`Problem reading or parsing configuration file: ${configFilePath}.`));
-    console.log('Failed with error: ', err);
+    console.log(`${err}`);
     process.exit(1);
   });
 }

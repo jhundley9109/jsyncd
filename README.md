@@ -36,8 +36,14 @@ jsyncd
 ## CLI Options
 
 ```options
--k, --kill      Kill all running instances of `jsyncd` and exit the program.
-                Pass truthy value to continue program. [-k=1]
+-l, --log FILE  Log file path
+-k, --kill[=CONTINUE]
+                Kill any running jsyncd processes and exit, true value continues program
+-h, --help      Display this help message
+-v, --version   Display version information and exit
+-d, --daemon    Detach and daemonize the process
+-i, --ignore    Pass `ignoreInitial` to `chokidarWatchOptions`, skips startup sync
+-D, --debug     Log the generated `Rsync.build` command
 ```
 
 ## Config File
