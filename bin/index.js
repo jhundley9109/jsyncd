@@ -78,12 +78,12 @@ function parseConfigFileAndStartProcess(configFilePath, optionParser) {
 
     config.logFile = optionParser.logFile.value() || config.logFile;
 
-    if (optionParser.ignoreInitial.value() !== undefined) {
-      config.chokidarWatchOptions.ignoreInitial = optionParser.ignoreInitial.value();
+    if (optionParser.ignoreInitial.value()) {
+      config.chokidarWatchOptions.ignoreInitial = true;
     }
 
-    if (optionParser.debug.value() !== undefined) {
-      config.debug = optionParser.debug.value();
+    if (optionParser.debug.value()) {
+      config.debug = true;
     }
 
     if (optionParser.daemon.value() || config.daemonize) {

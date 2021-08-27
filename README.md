@@ -35,6 +35,8 @@ jsyncd
 
 ## CLI Options
 
+CLI Options override settings that are also defined in the config file.
+
 ```options
 -l, --log FILE  Log file path
 -k, --kill[=CONTINUE]
@@ -49,6 +51,7 @@ jsyncd
 ## Config File
 
 The configuration file is the core of instructing `jsyncd` how to sync what files from where to who and where. The configuration file is a javascript module that exports a variable called `config`.
+The config file can be customized to build your synchronization configs dynamically via plain javascript.
 
 A default config file can be placed in `~/.config/jsyncd/config.mjs`. A template can be found in `config_example.mjs`.
 
@@ -74,15 +77,10 @@ A default config file can be placed in `~/.config/jsyncd/config.mjs`. A template
     - **exclude** - (default: []) Optional: Specify specific exclude files/folders for this source to exclude.
   - **chokidarWatchOptions** - (default: `{}`) May be any supported `chokidar` options and passed as `options` to `chokidar.watch(paths, [options])`. Common parameters may be `ignoreInitial` and `ignored` though there are many other options such as setting up polling instead of event based callbacks.
 
-Note: `rsyncBuildOptions` cascade from the top level down to the `directories` level with the most specific key/value pair being what is passed to `Rsync.build`. This allows you to set global defaults, app defaults, and override specific directories with unique settings. For instance, if all your hosts have the same `rsyncExcludePattern`, you can set that value at the `config.rsyncExcludePattern` level. However, setting that again at a `config.appConfig` or `config.appConfig.directories` level will override a higher up setting.
+Note: `rsyncBuildOptions` cascade from the top level down to the `directories` level with the most specific key/value pair being what is passed to `Rsync.build`.
+This allows you to set global defaults, app defaults, and override specific directories with unique settings. For instance, if all your hosts have the same `rsyncExcludePattern`, you can set that value at the `config.rsyncExcludePattern` level. However, setting that again at a `config.appConfig` or `config.appConfig.directories` level will override a higher up setting.
 
 Note2: `chokidarWatchOptions` cascades from the top level down to the `appConfigs` level with the most specific key/value paris being what is passed to `chokidar.watch(paths, [options])`
-
-### Why not JSON?
-
-Using a javascript module with exports allows simplifying RegEx passed to `directories.rsyncExcludePattern` and `chokidarWatchOptions.ignored` since you can write native JS and do not have to worry about escaping.
-
-Additionally, you can write some logic/functions to dynamically generate configuration directives with plain javascript.
 
 ## Goals
 
