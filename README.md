@@ -6,12 +6,17 @@
 
 - Configure multiple apps to sync to various local and/or remote directories.
 - Goal to support MacOS, Windows, and Linux by using `Chokidar` as a unified file monitoring watcher.
-- More simple and expandable configurations options when compared to `Lsyncd`.
+- More simple configuration options when compared to `Lsyncd`.
+- Better console output with color coded logging for ease of understanding when the program is not daemonized.
 
 ## How
 
-This program works by moinitoring `config.appConfigs.directories.source` for file system changes and firing off a dynamically built `Rsync.build` command.
-Once a file in the directory has been modified, a `chokidar` event is triggered which causes to an `rsync` process to sync from `source` to `destination`.
+This program works by monitoring `config.appConfigs.directories.source` for file system changes using the `chokidar` module and firing off a dynamically built `Rsync.build` commands.
+This program manages configuration options for both `rsync` and `chokidar` to customize your live file mirroring needs.
+
+[Rsync Readme](https://www.npmjs.com/package/rsync#build)
+
+[Chokidar Readme](https://www.npmjs.com/package/chokidar)
 
 ## Getting started
 
@@ -26,6 +31,8 @@ If installed globally, run with:
 ```bash
 jsyncd /path/to/config.mjs
 ```
+
+**Note:** If the config file path is specified, it must be the last option passed to the `jsyncd` command.
 
 Or place the config file in `~/.config/jsyncd/config.mjs` and run with:
 
@@ -55,8 +62,6 @@ The config file can be customized to build your synchronization configs dynamica
 
 A default config file can be placed in `~/.config/jsyncd/config.mjs`. A template can be found in `config_example.mjs`.
 
-**Note:** The config file path must be the last option passed to the `jsyncd` command.
-
 ### Options
 
 - **logFile** - (default: `/var/log/jsyncd/jsyncd.log`) Path to where STDOUT will be redirected. Required when `daemonize` is `true`.
@@ -66,12 +71,12 @@ A default config file can be placed in `~/.config/jsyncd/config.mjs`. A template
   - **flags** - (default: `''` OR `[]`) Optional: pass to the `Rsync.flags`. Typical defaults may include `a` for archive and `i` to log individual files as they sync to the `config.logFile`.
   - **exclude** - (default: `[]`) Optional: passed to the `Rsync.exclude` function. Folders and files for rsync to ignore under the `source` directory. Specifying here will be a default for all sources.
 - **appConfigs** - (default: `[{}]`) An array of objects where each `appConfig` defines a host -> remote server connection and path monitoring options.
-  - **name** - (default: '') Optional: Give your app a name. It'll show up in the logs when this app syncs to give you further insight on what is actively syncing.
+  - **name** - (default: `''`) Optional: Give your app a name. It'll show up in the logs when this app syncs to give you further insight on what is actively syncing.
   - **rsyncBuildOptions** - (default: `{}`) Overide the global `Rsync.build` options for this app. Specified keys replace higher up keys.
   - **targetHostname** - (default: `''`) Optional: IP Address or domain of target.
   - **targetUsername** - (default: `''`) Optional: ssh username if not configured with ~/.ssh/config. `targetHostname` is required if this is specified.
-  - **sshOptions** - (default: `{}`) Optional: Configure a non-standard ssh options such as port and/or an private key file. Options must have key/value pairs that match key/values in the ssh manual. These options build the `rsync -e "ssh -i {/path/to/privkey} -p {port}"` command.
-  - **directories** - (default: `[{}]`) An array of objects that configure local -> target directory syncs. Each key/value pair in each element of each object is passed to `Rsync.build` and is an `rsyncBuildOptions` configuration.
+  - **sshOptions** - (default: `{}`) Optional: Configure a non-standard ssh options such as port and/or an private key file. Options must have key/value pairs that match key/values in the ssh manual. These options build the `rsync --rsh "ssh -i {/path/to/privkey} -p {port}"` command.
+  - **directories** - (default: `[{}]`) An array of objects that configure local -> target directory syncs. Each key/value pair in each element of each object is passed to `Rsync.build` and is a `rsyncBuildOptions` configuration.
     - **source** - (required) Path to watch for changes and sync to `destination`. A trailing slash on the directory will sync the contents such as `/path/*`. No trailing slash copies the entire directory.
     - **destination** - (required) Path to where `rsync` should send the files.
     - **exclude** - (default: []) Optional: Specify specific exclude files/folders for this source to exclude.
@@ -85,6 +90,19 @@ Note2: `chokidarWatchOptions` cascades from the top level down to the `appConfig
 ## Goals
 
 Configuring multiple virtualbox environments with different projects became unwieldy so I was looking for a way to easily configure each target with a different set of rules for live file monitoring.
-Originally, I had used the lsyncd project which worked fine, but I found myself writing LUA in order to set up these rules until I built a program to manage `lsyncd` configuratings. This wasn't ideal since the configuration was in LUA.
+Originally, I had used the lsyncd project which worked fine, but I found myself writing LUA in order to set up these rules until I built a program to manage `lsyncd` configurations. This wasn't ideal since the configuration was in LUA and I had no prior experience and not much desire to learn LUA.
 
-Additionally, `lsyncd` has, at best, flakey support on MacOS depending on the MacOS version and no support on Windows without a solution such as WSL or cygwin. `jsyncd` solves these problems by simplifying a configuration file to manage all these live file syncs and file monitoring that should be interoperable between platforms.
+Additionally, `lsyncd` has, at best, flakey support on MacOS depending on the MacOS version and no support on Windows without a solution such as WSL or cygwin. `jsyncd` solves these problems by using the `rsync` and `chokidar` libraries for cross platform compatability bundled into one unified synchronization configuration tool.
+
+## Additional
+
+If you are doing frequent syncs to a remote host and need the changes to appear very quickly (such as debugging code!) you can consider using a shared ssh system connection to avoid the startup time of connecting via ssh.
+
+To configure a semi-persistant ssh connection, add these example configurations to your `~/.ssh/config` file:
+
+```bash
+HOST [targetHostname]
+  ControlMaster auto
+  ControlPath ~/.ssh/ssh-%r@%h:%p
+  ControlPersist 1800
+```

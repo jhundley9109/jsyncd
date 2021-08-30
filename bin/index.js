@@ -6,9 +6,12 @@ import chalk from 'chalk';
 import * as fs from 'fs';
 import daemon from 'daemon';
 import OptionParser from 'option-parser';
+import path from 'path';
+import os from 'os';
+import {pathToFileURL} from 'url';
 
 const processName = 'jsyncd';
-const defaultConfigFilePath = `${process.env.HOME}/.config/${processName}/config.mjs`;
+const defaultConfigFilePath = path.join(os.homedir(), '.config', processName, 'config.mjs');
 
 parseOptionsAndRunProgram();
 
@@ -71,7 +74,7 @@ Command line options override settings defined in <ConfigFile>`));
 }
 
 function parseConfigFileAndStartProcess(configFilePath, optionParser) {
-  import(configFilePath).then((configObj) => {
+  import(pathToFileURL(configFilePath)).then((configObj) => {
     const config = configObj.default;
 
     console.log(chalk.green(`Read configuration file: ${configFilePath}`));
