@@ -87,6 +87,23 @@ This allows you to set global defaults, app defaults, and override specific dire
 
 Note2: `chokidarWatchOptions` cascades from the top level down to the `appConfigs` level with the most specific key/value paris being what is passed to `chokidar.watch(paths, [options])`
 
+### Minimal config.mjs Example
+
+Following is a minimal example to get started. This config will sync the contents of `/var/folder1/` into the directory `/var/folder2/`.
+
+```javascript
+let config = {
+  appConfigs: [{
+    directories: [{
+      source: '/var/folder1/',
+      destination: '/var/folder2/',
+    }]
+  }]
+};
+
+export default config;
+```
+
 ## Goals
 
 Configuring multiple virtualbox environments with different projects became unwieldy so I was looking for a way to easily configure each target with a different set of rules for live file monitoring.
@@ -101,7 +118,7 @@ If you are doing frequent syncs to a remote host and need the changes to appear 
 To configure a semi-persistant ssh connection, add these example configurations to your `~/.ssh/config` file:
 
 ```bash
-HOST [targetHostname]
+HOST <targetHostname>
   ControlMaster auto
   ControlPath ~/.ssh/ssh-%r@%h:%p
   ControlPersist 1800
