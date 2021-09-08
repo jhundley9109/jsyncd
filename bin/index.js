@@ -1,39 +1,25 @@
 #!/usr/bin/env node
 
 import Jsyncd from '../lib/jsyncd.js';
-import find from 'find-process';
 import chalk from 'chalk';
-import * as fs from 'fs';
 import daemon from 'daemon';
-import OptionParser from 'option-parser';
+import {pathToFileURL} from 'url';
+import JsyncdOptionParser from '../lib/jsyncdoptionparser.js';
 import path from 'path';
 import os from 'os';
-import {pathToFileURL} from 'url';
+import find from 'find-process';
 
 const processName = 'jsyncd';
 const defaultConfigFilePath = path.join(os.homedir(), '.config', processName, 'config.mjs');
 
+const optionParser = new JsyncdOptionParser({
+  processName: processName,
+  defaultConfigFilePath: defaultConfigFilePath,
+});
+
 parseOptionsAndRunProgram();
 
-function parseOptionsAndRunProgram() {
-  const optionParser = new OptionParser();
-
-  optionParser.addOption('l', 'log', 'Log file path', 'logFile')
-    .argument('FILE', true);
-
-  optionParser.addOption('k', 'kill', `Kill any running ${processName} processes and exit, true value continues program`, 'kill')
-    .argument('CONTINUE', false);
-
-  optionParser.addOption('h', 'help', 'Display this help message')
-    .action(optionParser.helpAction(`[Options] [<ConfigFile>]\n
-If <ConfigFile> is not supplied, defaults to '${defaultConfigFilePath}'
-Command line options override settings defined in <ConfigFile>`));
-
-  optionParser.addOption('v', 'version', 'Display version information and exit', 'version');
-  optionParser.addOption('d', 'daemon', 'Detach and daemonize the process', 'daemon');
-  optionParser.addOption('i', 'ignore', 'Pass `ignoreInitial` to `chokidarWatchOptions`, skips startup sync', 'ignoreInitial');
-  optionParser.addOption('D', 'debug', 'Log the generated `Rsync.build` command', 'debug');
-
+async function parseOptionsAndRunProgram() {
   let unparsed;
 
   try {
@@ -43,37 +29,24 @@ Command line options override settings defined in <ConfigFile>`));
     process.exit();
   }
 
-  if (optionParser.version.value()) {
-    let packageJsonPath = new URL('../package.json', import.meta.url);
-    const {version} = JSON.parse(fs.readFileSync(packageJsonPath));
-    console.log(`${processName} version ${version}`);
-    process.exit();
+  let configFilePath = unparsed.pop() || defaultConfigFilePath;
+
+  const stopAfterKillProcess = optionParser.kill.value();
+
+  if (stopAfterKillProcess !== undefined) {
+    await killRunningProcesses();
+
+    // Javascript allowing if ('0') true is REALLY dumb.
+    if (stopAfterKillProcess && stopAfterKillProcess !== '0') {
+      console.log(chalk.red(`Ending process due to option: -k=${stopAfterKillProcess}`));
+      process.exit();
+    }
   }
 
-  let configFilePath = unparsed.pop();
-
-  if (!configFilePath) {
-    configFilePath = defaultConfigFilePath;
-  }
-
-  const continueAfterKillProcess = optionParser.kill.value();
-
-  if (continueAfterKillProcess !== undefined) {
-    killRunningProcesses().then(() => {
-
-      if (!continueAfterKillProcess) {
-        console.log(chalk.red('Ending process... Pass -k=1 to kill any other running daemons and continue starting sync'));
-        process.exit();
-      }
-
-      parseConfigFileAndStartProcess(configFilePath, optionParser);
-    });
-  } else {
-    parseConfigFileAndStartProcess(configFilePath, optionParser);
-  }
+  parseConfigFileAndStartProcess(configFilePath);
 }
 
-function parseConfigFileAndStartProcess(configFilePath, optionParser) {
+function parseConfigFileAndStartProcess(configFilePath) {
   import(pathToFileURL(configFilePath)).then((configObj) => {
     const config = configObj.default;
 
@@ -133,6 +106,10 @@ async function killRunningProcesses() {
   const processList = await find('name', `${processName} `).catch((err) => {
     console.log(`Error getting process list: ${err}`);
   });
+
+  if (!processList.length) {
+    return console.log(`Currently no ${processName} processes running`);
+  }
 
   for (let processInfo of processList) {
     let runningProcessPid = processInfo.pid;
