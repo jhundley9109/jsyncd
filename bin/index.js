@@ -7,7 +7,6 @@ import {pathToFileURL} from 'url';
 import JsyncdOptionParser from '../lib/jsyncdoptionparser.js';
 import path from 'path';
 import os from 'os';
-import find from 'find-process';
 
 const processName = 'jsyncd';
 const defaultConfigFilePath = path.join(os.homedir(), '.config', processName, 'config.mjs');
@@ -20,28 +19,12 @@ const optionParser = new JsyncdOptionParser({
 parseOptionsAndRunProgram();
 
 async function parseOptionsAndRunProgram() {
-  let unparsed;
-
-  try {
-    unparsed = optionParser.parse();
-  } catch (err) {
+  let unparsed = await optionParser.parse().catch((err) => {
     console.log(`Error parsing cli options: ${err.message}`);
     process.exit();
-  }
+  });
 
   let configFilePath = unparsed.pop() || defaultConfigFilePath;
-
-  const stopAfterKillProcess = optionParser.kill.value();
-
-  if (stopAfterKillProcess !== undefined) {
-    await killRunningProcesses();
-
-    // Javascript allowing if ('0') true is REALLY dumb.
-    if (stopAfterKillProcess && stopAfterKillProcess !== '0') {
-      console.log(chalk.red(`Ending process due to option: -k=${stopAfterKillProcess}`));
-      process.exit();
-    }
-  }
 
   parseConfigFileAndStartProcess(configFilePath);
 }
@@ -98,31 +81,4 @@ function parseConfigFileAndStartProcess(configFilePath) {
     console.log(`${err}`);
     process.exit(1);
   });
-}
-
-async function killRunningProcesses() {
-  const pid = process.pid;
-
-  const processList = await find('name', `${processName} `).catch((err) => {
-    console.log(`Error getting process list: ${err}`);
-  });
-
-  if (!processList.length) {
-    return console.log(`Currently no ${processName} processes running`);
-  }
-
-  for (let processInfo of processList) {
-    let runningProcessPid = processInfo.pid;
-
-    if (runningProcessPid === pid) {
-      continue;
-    }
-
-    if (processInfo.cmd.includes('nodemon')) {
-      continue;
-    }
-
-    console.log(chalk.yellow(`Killing a running ${processName} process. pid: ${runningProcessPid}`));
-    process.kill(processInfo.pid);
-  }
 }
