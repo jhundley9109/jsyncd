@@ -5,28 +5,24 @@ import chalk from 'chalk';
 import daemon from 'daemon';
 import {pathToFileURL} from 'url';
 import JsyncdOptionParser from '../lib/jsyncdoptionparser.js';
-import path from 'path';
-import os from 'os';
 
 const processName = 'jsyncd';
-const defaultConfigFilePath = path.join(os.homedir(), '.config', processName, 'config.mjs');
 
 parseOptionsAndRunProgram();
 
 async function parseOptionsAndRunProgram() {
   const optionParser = new JsyncdOptionParser({
     processName: processName,
-    defaultConfigFilePath: defaultConfigFilePath,
   });
 
-  let unparsed = await optionParser.parse().catch((err) => {
+  await optionParser.parse().catch((err) => {
     console.log(`Error parsing cli options: ${err.message}`);
     process.exit();
   });
 
-  let configFilePath = unparsed.pop() || defaultConfigFilePath;
+  const configFilePath = optionParser.configFilePath.value();
 
-  let configObj = await import(pathToFileURL(configFilePath)).catch((err) => {
+  const configObj = await import(pathToFileURL(configFilePath)).catch((err) => {
     console.log(chalk.red(`Problem reading or parsing configuration file: ${configFilePath}.`));
     console.log(`${err}`);
     process.exit(1);
