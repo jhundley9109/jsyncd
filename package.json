@@ -12,8 +12,8 @@
     "rsync": "github:jhundley9109/rsync"
   },
   "devDependencies": {
-    "eslint": "^7.32.0",
-    "nodemon": "^2.0.15"
+    "eslint": "^8.14.0",
+    "nodemon": "^2.0.16"
   },
   "author": "Jacob Hundley <jhundley9109@gmail.com>",
   "bin": {
