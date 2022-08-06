@@ -3,7 +3,7 @@
 import Jsyncd from '../lib/jsyncd.js';
 import chalk from 'chalk';
 import daemon from 'daemon';
-import {pathToFileURL} from 'url';
+import path from 'node:path';
 import JsyncdOptionParser from '../lib/jsyncdoptionparser.js';
 
 const processName = 'jsyncd';
@@ -22,8 +22,10 @@ async function parseOptionsAndRunProgram() {
 
   const configFilePath = optionParser.configFilePath.value();
 
-  const configObj = await import(pathToFileURL(configFilePath)).catch((err) => {
+  const configObj = await import(path.resolve(configFilePath)).catch((err) => {
     console.log(chalk.red(`Problem reading or parsing configuration file: ${configFilePath}.`));
+    console.log(chalk.green(`To create skeleton config file run this command:`));
+    console.log(chalk.green(`    mkdir -p ${path.dirname(configFilePath)}; cp config_example.mjs ${configFilePath};`));
     console.log(`${err}`);
     process.exit(1);
   });
@@ -31,6 +33,11 @@ async function parseOptionsAndRunProgram() {
   const config = configObj.default;
 
   console.log(chalk.green(`Read configuration file: ${configFilePath}`));
+
+  if (config === undefined) {
+    console.log(chalk.red(`Config file '=${configFilePath}' was read but it does not export a default 'config' variable. Please ensure ${configFilePath} includes an export statement i.e. 'export default config;'`));
+    process.exit(1);
+  }
 
   config.logFile = optionParser.logFile.value() || config.logFile;
 
