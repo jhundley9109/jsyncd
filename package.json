@@ -1,6 +1,6 @@
 {
   "name": "jsyncd",
-  "version": "0.4.12",
+  "version": "0.4.13",
   "type": "module",
   "description": "live file monitor and rsync daemon",
   "dependencies": {
