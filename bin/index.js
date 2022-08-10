@@ -35,7 +35,7 @@ async function parseOptionsAndRunProgram() {
   console.log(chalk.green(`Read configuration file: ${configFilePath}`));
 
   if (config === undefined) {
-    console.log(chalk.red(`Config file '=${configFilePath}' was read but it does not export a default 'config' variable. Please ensure ${configFilePath} includes an export statement i.e. 'export default config;'`));
+    console.log(chalk.red(`Config file '${configFilePath}' was read but it does not export a default 'config' variable. Please ensure ${configFilePath} includes an export statement i.e. 'export default config;'`));
     process.exit(1);
   }
 
