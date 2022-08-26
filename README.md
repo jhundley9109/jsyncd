@@ -5,7 +5,7 @@
 ## Why?
 
 - Configure multiple apps to sync to various local and/or remote directories.
-- Goal to support MacOS, Windows, and Linux by using `Chokidar` as a unified file monitoring watcher.
+- Goal to support macOS, Windows, and Linux by using `Chokidar` as a unified file monitoring watcher.
 - More simple configuration options when compared to `Lsyncd`.
 - Better console output with color coded logging for ease of understanding when the program is not daemonized.
 
@@ -109,7 +109,7 @@ export default config;
 Configuring multiple virtualbox environments with different projects became unwieldy so I was looking for a way to easily configure each target with a different set of rules for live file monitoring.
 Originally, I had used the lsyncd project which worked fine, but I found myself writing LUA in order to set up these rules until I built a program to manage `lsyncd` configurations. This wasn't ideal since the configuration was in LUA and I had no prior experience and not much desire to learn LUA.
 
-Additionally, `lsyncd` has, at best, flakey support on MacOS depending on the MacOS version and no support on Windows without a solution such as WSL or cygwin. `jsyncd` solves these problems by using the `rsync` and `chokidar` libraries for cross platform compatability bundled into one unified synchronization configuration tool.
+Additionally, `lsyncd` has, at best, flakey support on macOS depending on the macOS version and no support on Windows without a solution such as WSL or cygwin. `jsyncd` solves these problems by using the `rsync` and `chokidar` libraries for cross platform compatability bundled into one unified synchronization configuration tool.
 
 ## Additional
 

@@ -5,7 +5,7 @@ import OptionParser from 'option-parser';
 import find from 'find-process';
 
 class JsyncdOptionParser extends OptionParser {
-  constructor(param) {
+  constructor(param: {processName: string;}) {
     super(param);
 
     const processName = param.processName;
@@ -13,7 +13,7 @@ class JsyncdOptionParser extends OptionParser {
 
     this.addOption('c', 'configFilePath', 'Config file path, alternative option to supplying the filename as the last parameter', 'configFilePath')
       .argument('FILE', true)
-      .action((filePath) => {
+      .action((filePath: string) => {
         this._configFilePath = filePath;
       });
 
@@ -22,7 +22,7 @@ class JsyncdOptionParser extends OptionParser {
 
     this.addOption('k', 'kill', `Kill any running ${processName} processes and exit, true value exits program`, 'kill')
       .argument('CONTINUE', false)
-      .action(async (stopAfterKillProcess) => {
+      .action(async (stopAfterKillProcess: string) => {
         await killRunningProcesses(processName);
 
         if (stopAfterKillProcess && stopAfterKillProcess !== '0') {
@@ -40,7 +40,7 @@ class JsyncdOptionParser extends OptionParser {
     this.addOption('v', 'version', 'Display version information and exit', 'version')
       .action(() => {
         const packageJsonPath = new URL('../package.json', import.meta.url);
-        const {version} = JSON.parse(fs.readFileSync(packageJsonPath));
+        const {version} = JSON.parse(fs.readFileSync(packageJsonPath).toString());
         console.log(`${processName} version ${version}`);
         process.exit();
       });
@@ -50,7 +50,7 @@ class JsyncdOptionParser extends OptionParser {
     this.addOption('D', 'debug', 'Log the generated `Rsync.build` command', 'debug');
   }
 
-  async parse(a) {
+  async parse(a: object | undefined = undefined) {
     let unparsed = await super.parse(a);
 
     this._configFilePath = unparsed.pop() || this._configFilePath;
@@ -63,11 +63,12 @@ class JsyncdOptionParser extends OptionParser {
   }
 }
 
-async function killRunningProcesses(processName) {
+async function killRunningProcesses(processName: string) {
   const pid = process.pid;
 
-  const processList = await find('name', `${processName} `).catch((err) => {
+  const processList = await find('name', `${processName} `).catch((err: Error) => {
     console.log(`Error getting process list: ${err}`);
+    return [];
   });
 
   let killedProcess = false;

@@ -4,7 +4,7 @@ import {open as fsopen} from 'node:fs/promises';
 import {existsSync} from 'node:fs';
 import chalk from 'chalk';
 
-const availableChalkColors = [
+const availableChalkColors: Array<chalk.Chalk> = [
   chalk.hex('#FFAAAA'),
   chalk.blue,
   chalk.magenta,
@@ -15,8 +15,42 @@ const availableChalkColors = [
   chalk.cyanBright,
 ];
 
+interface AppConfig {
+  directories: object;
+  chokidarWatchOptions: object;
+  sshShellOptions: string;
+  rsyncBuildOptions: object;
+  targetHostname: string;
+  targetUsername: string;
+  name: string;
+}
+
+interface DirectorySyncStatus {
+  syncing: boolean;
+  firstSyncComplete: boolean;
+}
+
+interface JsyncdConfig {
+  appConfigs: object;
+  logFile: string;
+  chokidarWatchOptions: object;
+  rsyncBuildOptions: object;
+  debug: boolean;
+}
+
+interface RsyncBuildOptions {
+  source: string;
+  destination: string;
+}
+
 class Jsyncd {
-  constructor(config) {
+  _config: JsyncdConfig;
+  _logFileHandle: any;
+  _rsyncOutputRegex: RegExp;
+  _rsyncStartOfLineRegex: RegExp;
+  // appConfigs: object;
+
+  constructor(config: JsyncdConfig) {
     this._config = config;
     this._logFileHandle = null;
     this._rsyncOutputRegex = new RegExp(/^((<f\S*)|(cd\S*)) /gm);
@@ -45,13 +79,13 @@ class Jsyncd {
     apps.forEach((appConfig, appIndex) => this.syncApp(appConfig, appIndex));
   }
 
-  syncApp(appConfig, appIndex) {
+  syncApp(appConfig: AppConfig, appIndex: number) {
     const config = this._config;
 
     const applicationDirectories = appConfig.directories;
 
     if (!Array.isArray(applicationDirectories) || !applicationDirectories.length) {
-      throw new ConfigFileError(`Invalid or empty config.appConfig[${appIndex}].directories`);
+      throw new ConfigFileError(`Invalid or empty config.appConfig[${appIndex}].directories[]`);
     }
 
     let chokidarWatchOptions = {
@@ -74,7 +108,7 @@ class Jsyncd {
     const sshObjString = shellOptionsArray.map(entry => entry.filter(e => String(e) !== '').join(' ')).join(' ');
     const remoteHostUri = this.buildRemoteURI(appConfig.targetHostname, appConfig.targetUsername);
 
-    let activeDirectorySyncs = [];
+    let activeDirectorySyncs: Array<DirectorySyncStatus> = [];
 
     applicationDirectories.forEach((directoryConfig, directoryIndex) => {
       let rsyncBuildOptions = {
@@ -98,7 +132,7 @@ class Jsyncd {
       rsyncBuildOptions.destination = remoteHostUri + rsyncBuildOptions.destination;
       rsyncBuildOptions.shell = sshObjString && `ssh ${sshObjString}`;
 
-      const directorySyncStatus = {};
+      const directorySyncStatus: DirectorySyncStatus = {syncing: false, firstSyncComplete: false};
       activeDirectorySyncs.push(directorySyncStatus);
 
       const sourcePath = rsyncBuildOptions.source;
@@ -148,7 +182,7 @@ class Jsyncd {
     });
   }
 
-  async buildAndRunRsync(rsyncBuildOptions, chalkColorFunc, appName='') {
+  async buildAndRunRsync(rsyncBuildOptions: RsyncBuildOptions, chalkColorFunc:  chalk.Chalk | undefined, appName='') {
     let rsync = Rsync.build(rsyncBuildOptions);
 
     this.sendToLog(`${this.getTimestamp()}${appName} Calling rsync for ${rsyncBuildOptions.source} -> ${rsyncBuildOptions.destination}`, chalkColorFunc);
@@ -157,7 +191,7 @@ class Jsyncd {
     let outputFirstLine = false;
 
     rsync.output(
-      (stdoutHandle) => {
+      (stdoutHandle: Buffer) => {
         let [outputContent, syncSuccess] = this.parseRsyncOutHandle(stdoutHandle);
 
         if (!outputFirstLine && syncSuccess) {
@@ -167,51 +201,52 @@ class Jsyncd {
 
         this.sendToLog(outputContent, chalkColorFunc);
       },
-      (stderrHandle) => {
+      (stderrHandle: Buffer) => {
         let [outputContent] = this.parseRsyncOutHandle(stderrHandle);
 
-        this.sendErrorToLog(`${this.getTimestamp()}${appName} Rsync error content:\n${outputContent}`);
+        this.sendWarningToLog(`${this.getTimestamp()}${appName} Rsync error content:`);
+        this.sendErrorToLog(`${outputContent}`);
       }
     );
 
-    const exitCode = await rsync.execute().catch((error) => {
-      this.sendErrorToLog(`${this.getTimestamp()}${appName} ${error}`);
+    const exitCode = await rsync.execute().catch((error: {code: string;}) => {
+      this.sendWarningToLog(`${this.getTimestamp()}${appName} ${error}`);
       return error.code;
     });
 
     exitCode !== undefined && this.sendToLog(`${this.getTimestamp()}${appName} Finished with exitcode: ${exitCode}`, chalkColorFunc);
   }
 
-  buildRemoteURI(hostname, username) {
+  buildRemoteURI(hostname: string, username: string) {
     let remoteUri = username && username + '@';
     remoteUri += hostname && hostname + ':';
 
     return remoteUri || '';
   }
 
-  parseRsyncOutHandle(fileHandle) {
+  parseRsyncOutHandle(fileHandle: Buffer):[string, boolean] {
     // rsync with the -i option has a coded description of the changes at the beginning of the filename. Just trim that off.
     let rsyncOutputRegex = this._rsyncOutputRegex;
 
     let rsyncOutString = fileHandle.toString().trim();
 
     let formattedOutput = rsyncOutString.replace(rsyncOutputRegex, '').replace(this._rsyncStartOfLineRegex, ' '.repeat(4));
-    return [formattedOutput, rsyncOutString.match(rsyncOutputRegex)];
+    return [formattedOutput, rsyncOutString.match(rsyncOutputRegex) ? true : false];
   }
 
-  sendErrorToLog(contentToLog) {
+  sendErrorToLog(contentToLog: string) {
     this.sendToLog(contentToLog, chalk.red);
   }
 
-  sendWarningToLog(contentToLog) {
+  sendWarningToLog(contentToLog: string) {
     this.sendToLog(contentToLog, chalk.yellow);
   }
 
-  sendDebugToLog(contentToLog, chalkFunction) {
+  sendDebugToLog(contentToLog: string, chalkFunction: chalk.Chalk | undefined = undefined) {
     this._config.debug && this.sendToLog(contentToLog, chalkFunction);
   }
 
-  sendToLog(contentToLog, chalkFunction) {
+  sendToLog(contentToLog: string, chalkFunction: chalk.Chalk | undefined = undefined) {
     if (this._logFileHandle) {
       this._logFileHandle.write(contentToLog + '\n');
     } else {
@@ -230,7 +265,9 @@ class Jsyncd {
 }
 
 class ConfigFileError extends Error {
-  constructor(message) {
+  type: string;
+
+  constructor(message: string) {
     super(message);
     this.type = 'Misconfigured config file';
   }
