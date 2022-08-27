@@ -1,12 +1,3 @@
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 import { Rsync } from 'rsync';
 import chokidar from 'chokidar';
 import { open as fsopen } from 'node:fs/promises';
@@ -23,31 +14,28 @@ const availableChalkColors = [
     chalk.cyanBright,
 ];
 class Jsyncd {
-    // appConfigs: object;
     constructor(config) {
         this._config = config;
         this._logFileHandle = null;
         this._rsyncOutputRegex = new RegExp(/^((<f\S*)|(cd\S*)) /gm);
         this._rsyncStartOfLineRegex = new RegExp(/^/gm);
     }
-    startSync() {
-        return __awaiter(this, void 0, void 0, function* () {
-            const config = this._config;
-            const apps = config.appConfigs;
-            if (!Array.isArray(apps) || !apps.length) {
-                throw new ConfigFileError('Invalid or empty config.appConfigs');
-            }
-            if (config.logFile) {
-                yield fsopen(config.logFile, 'a').then((tempLogHandle) => {
-                    console.log(`Sending logs to ${config.logFile}`);
-                    this._logFileHandle = tempLogHandle;
-                }).catch((err) => {
-                    err.type = `Error writing to '${config.logFile}'. Ensure file exists and is writable.`;
-                    throw err;
-                });
-            }
-            apps.forEach((appConfig, appIndex) => this.syncApp(appConfig, appIndex));
-        });
+    async startSync() {
+        const config = this._config;
+        const apps = config.appConfigs;
+        if (!Array.isArray(apps) || !apps.length) {
+            throw new ConfigFileError('Invalid or empty config.appConfigs');
+        }
+        if (config.logFile) {
+            await fsopen(config.logFile, 'a').then((tempLogHandle) => {
+                console.log(`Sending logs to ${config.logFile}`);
+                this._logFileHandle = tempLogHandle;
+            }).catch((err) => {
+                err.type = `Error writing to '${config.logFile}'. Ensure file exists and is writable.`;
+                throw err;
+            });
+        }
+        apps.forEach((appConfig, appIndex) => this.syncApp(appConfig, appIndex));
     }
     syncApp(appConfig, appIndex) {
         const config = this._config;
@@ -55,7 +43,10 @@ class Jsyncd {
         if (!Array.isArray(applicationDirectories) || !applicationDirectories.length) {
             throw new ConfigFileError(`Invalid or empty config.appConfig[${appIndex}].directories[]`);
         }
-        let chokidarWatchOptions = Object.assign(Object.assign({}, config.chokidarWatchOptions), appConfig.chokidarWatchOptions);
+        let chokidarWatchOptions = {
+            ...config.chokidarWatchOptions,
+            ...appConfig.chokidarWatchOptions,
+        };
         // Expect the ssh options to be exact key/value pairs that match the ssh manual
         let shellOptionsArray = Object.entries(appConfig.sshShellOptions || {});
         shellOptionsArray.forEach(entry => entry.forEach(e => {
@@ -69,7 +60,11 @@ class Jsyncd {
         const remoteHostUri = this.buildRemoteURI(appConfig.targetHostname, appConfig.targetUsername);
         let activeDirectorySyncs = [];
         applicationDirectories.forEach((directoryConfig, directoryIndex) => {
-            let rsyncBuildOptions = Object.assign(Object.assign(Object.assign({}, config.rsyncBuildOptions), appConfig.rsyncBuildOptions), directoryConfig);
+            let rsyncBuildOptions = {
+                ...config.rsyncBuildOptions,
+                ...appConfig.rsyncBuildOptions,
+                ...directoryConfig,
+            };
             if (!rsyncBuildOptions.source) {
                 throw new ConfigFileError(`Missing appConfig[${appIndex}].directories[${directoryIndex}].source. Please setup a valid source path.`);
             }
@@ -120,30 +115,28 @@ class Jsyncd {
             });
         });
     }
-    buildAndRunRsync(rsyncBuildOptions, chalkColorFunc, appName = '') {
-        return __awaiter(this, void 0, void 0, function* () {
-            let rsync = Rsync.build(rsyncBuildOptions);
-            this.sendToLog(`${this.getTimestamp()}${appName} Calling rsync for ${rsyncBuildOptions.source} -> ${rsyncBuildOptions.destination}`, chalkColorFunc);
-            this.sendDebugToLog(rsync.command(), chalkColorFunc);
-            let outputFirstLine = false;
-            rsync.output((stdoutHandle) => {
-                let [outputContent, syncSuccess] = this.parseRsyncOutHandle(stdoutHandle);
-                if (!outputFirstLine && syncSuccess) {
-                    this.sendToLog(`${this.getTimestamp()}${appName} Syncing new/modified files/dirs`, chalkColorFunc);
-                    outputFirstLine = true;
-                }
-                this.sendToLog(outputContent, chalkColorFunc);
-            }, (stderrHandle) => {
-                let [outputContent] = this.parseRsyncOutHandle(stderrHandle);
-                this.sendWarningToLog(`${this.getTimestamp()}${appName} Rsync error content:`);
-                this.sendErrorToLog(`${outputContent}`);
-            });
-            const exitCode = yield rsync.execute().catch((error) => {
-                this.sendWarningToLog(`${this.getTimestamp()}${appName} ${error}`);
-                return error.code;
-            });
-            exitCode !== undefined && this.sendToLog(`${this.getTimestamp()}${appName} Finished with exitcode: ${exitCode}`, chalkColorFunc);
+    async buildAndRunRsync(rsyncBuildOptions, chalkColorFunc, appName = '') {
+        let rsync = Rsync.build(rsyncBuildOptions);
+        this.sendToLog(`${this.getTimestamp()}${appName} Calling rsync for ${rsyncBuildOptions.source} -> ${rsyncBuildOptions.destination}`, chalkColorFunc);
+        this.sendDebugToLog(rsync.command(), chalkColorFunc);
+        let outputFirstLine = false;
+        rsync.output((stdoutHandle) => {
+            let [outputContent, syncSuccess] = this.parseRsyncOutHandle(stdoutHandle);
+            if (!outputFirstLine && syncSuccess) {
+                this.sendToLog(`${this.getTimestamp()}${appName} Syncing new/modified files/dirs`, chalkColorFunc);
+                outputFirstLine = true;
+            }
+            this.sendToLog(outputContent, chalkColorFunc);
+        }, (stderrHandle) => {
+            let [outputContent] = this.parseRsyncOutHandle(stderrHandle);
+            this.sendWarningToLog(`${this.getTimestamp()}${appName} Rsync error content:`);
+            this.sendErrorToLog(`${outputContent}`);
         });
+        const exitCode = await rsync.execute().catch((error) => {
+            this.sendWarningToLog(`${this.getTimestamp()}${appName} ${error}`);
+            return error.code;
+        });
+        exitCode !== undefined && this.sendToLog(`${this.getTimestamp()}${appName} Finished with exitcode: ${exitCode}`, chalkColorFunc);
     }
     buildRemoteURI(hostname, username) {
         let remoteUri = username && username + '@';

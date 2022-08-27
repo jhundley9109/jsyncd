@@ -19,7 +19,7 @@ interface AppConfig {
   directories: object;
   chokidarWatchOptions: object;
   sshShellOptions: string;
-  rsyncBuildOptions: object;
+  rsyncBuildOptions: RsyncBuildOptions;
   targetHostname: string;
   targetUsername: string;
   name: string;
@@ -31,10 +31,10 @@ interface DirectorySyncStatus {
 }
 
 interface JsyncdConfig {
-  appConfigs: object;
+  appConfigs: AppConfig[];
   logFile: string;
   chokidarWatchOptions: object;
-  rsyncBuildOptions: object;
+  rsyncBuildOptions: RsyncBuildOptions;
   debug: boolean;
 }
 
@@ -48,7 +48,6 @@ class Jsyncd {
   _logFileHandle: any;
   _rsyncOutputRegex: RegExp;
   _rsyncStartOfLineRegex: RegExp;
-  // appConfigs: object;
 
   constructor(config: JsyncdConfig) {
     this._config = config;
