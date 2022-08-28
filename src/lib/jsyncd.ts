@@ -1,7 +1,7 @@
 import {Rsync} from 'rsync';
 import chokidar from 'chokidar';
 import {open as fsopen} from 'node:fs/promises';
-import {existsSync} from 'node:fs';
+import * as fs from 'node:fs';
 import chalk from 'chalk';
 
 const availableChalkColors: Array<chalk.Chalk> = [
@@ -15,10 +15,18 @@ const availableChalkColors: Array<chalk.Chalk> = [
   chalk.cyanBright,
 ];
 
-interface AppConfig {
-  directories: object;
+interface JsyncdConfig {
+  appConfigs: AppConfig[];
+  logFile: string;
   chokidarWatchOptions: object;
-  sshShellOptions: string;
+  rsyncBuildOptions: RsyncBuildOptions;
+  debug: boolean;
+}
+
+interface AppConfig {
+  directories: RsyncBuildOptions[];
+  chokidarWatchOptions: object;
+  sshShellOptions: object;
   rsyncBuildOptions: RsyncBuildOptions;
   targetHostname: string;
   targetUsername: string;
@@ -30,24 +38,17 @@ interface DirectorySyncStatus {
   firstSyncComplete: boolean;
 }
 
-interface JsyncdConfig {
-  appConfigs: AppConfig[];
-  logFile: string;
-  chokidarWatchOptions: object;
-  rsyncBuildOptions: RsyncBuildOptions;
-  debug: boolean;
-}
-
 interface RsyncBuildOptions {
   source: string;
   destination: string;
+  shell: string;
 }
 
 class Jsyncd {
-  _config: JsyncdConfig;
-  _logFileHandle: any;
-  _rsyncOutputRegex: RegExp;
-  _rsyncStartOfLineRegex: RegExp;
+  private _config: JsyncdConfig;
+  private _logFileHandle: null | fs.promises.FileHandle;
+  private _rsyncOutputRegex: RegExp;
+  private _rsyncStartOfLineRegex: RegExp;
 
   constructor(config: JsyncdConfig) {
     this._config = config;
@@ -124,7 +125,7 @@ class Jsyncd {
         throw new ConfigFileError(`Missing appConfig[${appIndex}].directories[${directoryIndex}].destination. Please set up a valid destination path.`);
       }
 
-      if (!existsSync(rsyncBuildOptions.source)) {
+      if (!fs.existsSync(rsyncBuildOptions.source)) {
         throw new ConfigFileError(`'${rsyncBuildOptions.source}' for appConfig[${appIndex}].directories[${directoryIndex}].source does not exist. Cannot sync an unavailable directory.`);
       }
 

@@ -39,7 +39,7 @@ class JsyncdOptionParser extends OptionParser {
         this.addOption('i', 'ignore', 'Pass `ignoreInitial` to `chokidarWatchOptions`, skips startup sync', 'ignoreInitial');
         this.addOption('D', 'debug', 'Log the generated `Rsync.build` command', 'debug');
     }
-    async parse(a = undefined) {
+    async parse(a) {
         let unparsed = await super.parse(a);
         this._configFilePath = unparsed.pop() || this._configFilePath;
         if (!this.configFilePath.value()) {
@@ -70,4 +70,3 @@ async function killRunningProcesses(processName) {
     }
 }
 export default JsyncdOptionParser;
-//# sourceMappingURL=jsyncdoptionparser.js.map

@@ -14,6 +14,7 @@ async function parseOptionsAndRunProgram() {
         console.log(`Error parsing cli options: ${err.message}`);
         process.exit();
     });
+    // console.log(optionParser.configFilePath.value())
     const configFilePath = optionParser.configFilePath.value();
     const configObj = await import(path.resolve(configFilePath)).catch((err) => {
         console.log(chalk.red(`Problem reading or parsing configuration file: ${configFilePath}.`));
@@ -28,7 +29,7 @@ async function parseOptionsAndRunProgram() {
         console.log(chalk.red(`Config file '${configFilePath}' was read but it does not export a default 'config' variable. Please ensure ${configFilePath} includes an export statement i.e. 'export default config;'`));
         process.exit(1);
     }
-    config.logFile = optionParser.logFile.value() || config.logFile;
+    config.logFile = resolveHome(optionParser.logFile.value() || config.logFile);
     if (optionParser.ignoreInitial.value()) {
         config.chokidarWatchOptions.ignoreInitial = true;
     }
@@ -60,4 +61,10 @@ async function parseOptionsAndRunProgram() {
         process.exit();
     });
 }
-//# sourceMappingURL=index.js.map
+// Allow ~/ syntax to define a log file path
+function resolveHome(filepath) {
+    if (filepath[0] === '~' && process.env.HOME) {
+        return path.join(process.env.HOME, filepath.slice(1));
+    }
+    return filepath;
+}

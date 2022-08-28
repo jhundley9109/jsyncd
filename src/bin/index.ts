@@ -20,6 +20,7 @@ async function parseOptionsAndRunProgram() {
     process.exit();
   });
 
+// console.log(optionParser.configFilePath.value())
   const configFilePath = optionParser.configFilePath.value();
 
   const configObj = await import(path.resolve(configFilePath)).catch((err) => {
@@ -39,7 +40,7 @@ async function parseOptionsAndRunProgram() {
     process.exit(1);
   }
 
-  config.logFile = optionParser.logFile.value() || config.logFile;
+  config.logFile = resolveHome(optionParser.logFile.value() || config.logFile);
 
   if (optionParser.ignoreInitial.value()) {
     config.chokidarWatchOptions.ignoreInitial = true;
@@ -80,4 +81,12 @@ async function parseOptionsAndRunProgram() {
     jsyncd.sendWarningToLog(jsyncd.getTimestamp() + ' Caught SIGTERM. Terminating...');
     process.exit();
   });
+}
+
+// Allow ~/ syntax to define a log file path
+function resolveHome(filepath: string) {
+    if (filepath[0] === '~' && process.env.HOME) {
+        return path.join(process.env.HOME, filepath.slice(1));
+    }
+    return filepath;
 }

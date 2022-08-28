@@ -1,7 +1,7 @@
 import { Rsync } from 'rsync';
 import chokidar from 'chokidar';
 import { open as fsopen } from 'node:fs/promises';
-import { existsSync } from 'node:fs';
+import * as fs from 'node:fs';
 import chalk from 'chalk';
 const availableChalkColors = [
     chalk.hex('#FFAAAA'),
@@ -71,7 +71,7 @@ class Jsyncd {
             if (!rsyncBuildOptions.destination) {
                 throw new ConfigFileError(`Missing appConfig[${appIndex}].directories[${directoryIndex}].destination. Please set up a valid destination path.`);
             }
-            if (!existsSync(rsyncBuildOptions.source)) {
+            if (!fs.existsSync(rsyncBuildOptions.source)) {
                 throw new ConfigFileError(`'${rsyncBuildOptions.source}' for appConfig[${appIndex}].directories[${directoryIndex}].source does not exist. Cannot sync an unavailable directory.`);
             }
             rsyncBuildOptions.destination = remoteHostUri + rsyncBuildOptions.destination;
@@ -184,4 +184,3 @@ class ConfigFileError extends Error {
     }
 }
 export default Jsyncd;
-//# sourceMappingURL=jsyncd.js.map

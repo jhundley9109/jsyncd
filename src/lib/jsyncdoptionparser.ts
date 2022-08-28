@@ -50,7 +50,7 @@ class JsyncdOptionParser extends OptionParser {
     this.addOption('D', 'debug', 'Log the generated `Rsync.build` command', 'debug');
   }
 
-  async parse(a: object | undefined = undefined) {
+  async parse(a?: object) {
     let unparsed = await super.parse(a);
 
     this._configFilePath = unparsed.pop() || this._configFilePath;
