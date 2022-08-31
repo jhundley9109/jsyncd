@@ -1,94 +1,63 @@
 import os from 'os';
 import * as fs from 'fs';
 import path from 'path';
-import OptionParser from 'option-parser';
+// import OptionParser from 'option-parser';
+import { Command } from 'commander';
 import find from 'find-process';
 
-class JsyncdOptionParser extends OptionParser {
-  constructor(param: {processName: string;}) {
-    super(param);
+class JsyncdOptionParser extends Command {
+  _processName: string;
 
-    const processName = param.processName;
-    this._configFilePath = path.join(os.homedir(), '.config', processName, 'config.mjs');
+  constructor(processName: string) {
+    super();
 
-    this.addOption('c', 'configFilePath', 'Config file path, alternative option to supplying the filename as the last parameter', 'configFilePath')
-      .argument('FILE', true)
-      .action((filePath: string) => {
-        this._configFilePath = filePath;
-      });
+    this._processName = processName;
 
-    this.addOption('l', 'log', 'Log file path', 'logFile')
-      .argument('FILE', true);
+    const defaultConfigFilePath: string = path.join(os.homedir(), '.config', processName, 'config.mjs');
 
-    this.addOption('k', 'kill', `Kill any running ${processName} processes and exit, true value exits program`, 'kill')
-      .argument('CONTINUE', false)
-      .action(async (stopAfterKillProcess: string) => {
-        await killRunningProcesses(processName);
-
-        if (stopAfterKillProcess && stopAfterKillProcess !== '0') {
-          console.log(`Ending process due to option: -k=${stopAfterKillProcess}`);
-          process.exit();
-        }
-      });
-
-    this.addOption('h', 'help', 'Display this help message')
-      .action(
-        this.helpAction(`[Options] [<ConfigFile>]\n
-  If <ConfigFile> is not supplied, defaults to '${this._configFilePath}'
-  Command line options override settings defined in <ConfigFile>`));
-
-    this.addOption('v', 'version', 'Display version information and exit', 'version')
-      .action(() => {
-        const packageJsonPath = new URL('../package.json', import.meta.url);
-        const {version} = JSON.parse(fs.readFileSync(packageJsonPath).toString());
-        console.log(`${processName} version ${version}`);
-        process.exit();
-      });
-
-    this.addOption('d', 'daemon', 'Detach and daemonize the process', 'daemon');
-    this.addOption('i', 'ignore', 'Pass `ignoreInitial` to `chokidarWatchOptions`, skips startup sync', 'ignoreInitial');
-    this.addOption('D', 'debug', 'Log the generated `Rsync.build` command', 'debug');
+    this.option('-c, --configFile <configFilePath>', `Config file path.`, defaultConfigFilePath);
+    this.option('-d, --daemon', 'Detach and daemonize the process');
+    this.option('-D, --debug', 'Log the generated `Rsync.build` command');
+    this.option('-i, --ignore', 'Pass `ignoreInitial` to `chokidarWatchOptions`');
+    this.option('-k, --kill [exitProgram]', `Kill any running ${processName} processes and exit, '1' exits the program`);
+    this.option('-l, --logFile <logFilePath>', 'Log file path');
+    this.option('-v, --version', 'Display version information and exit', () => {
+      const packageJsonPath = new URL('../../package.json', import.meta.url);
+      const {version} = JSON.parse(fs.readFileSync(packageJsonPath).toString());
+      console.log(`${processName} version ${version}`);
+      process.exit();
+    });
   }
 
-  async parse(a?: object) {
-    let unparsed = await super.parse(a);
+  async killRunningProcesses() {
+    const pid = process.pid;
 
-    this._configFilePath = unparsed.pop() || this._configFilePath;
+    const processName = this._processName;
 
-    if (!this.configFilePath.value()) {
-      await this.configFilePath.handleArgument('c', this._configFilePath);
+    const processList = await find('name', `${processName} `).catch((err: Error) => {
+      console.log(`Error getting process list: ${err}`);
+      return [];
+    });
+
+    let killedProcess = false;
+
+    for (let processInfo of processList) {
+      let runningProcessPid = processInfo.pid;
+
+      // Skip if the looking at the currently running process or if the process is running in test mode.
+      if (runningProcessPid === pid || processInfo.cmd.includes('nodemon')) {
+        continue;
+      }
+
+      console.log(`Killing a running ${processName} process. pid: ${runningProcessPid}`);
+      process.kill(processInfo.pid);
+
+      killedProcess = true;
     }
 
-    return unparsed;
-  }
-}
-
-async function killRunningProcesses(processName: string) {
-  const pid = process.pid;
-
-  const processList = await find('name', `${processName} `).catch((err: Error) => {
-    console.log(`Error getting process list: ${err}`);
-    return [];
-  });
-
-  let killedProcess = false;
-
-  for (let processInfo of processList) {
-    let runningProcessPid = processInfo.pid;
-
-    // Skip if the looking at the currently running process or if the process is running in test mode.
-    if (runningProcessPid === pid || processInfo.cmd.includes('nodemon')) {
-      continue;
+    if (!killedProcess) {
+      console.log(`Currently no ${processName} processes running`);
     }
-
-    console.log(`Killing a running ${processName} process. pid: ${runningProcessPid}`);
-    process.kill(processInfo.pid);
-
-    killedProcess = true;
-  }
-
-  if (!killedProcess) {
-    return console.log(`Currently no ${processName} processes running`);
   }
 }
 

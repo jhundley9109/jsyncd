@@ -8,20 +8,28 @@ import JsyncdOptionParser from '../lib/jsyncdoptionparser.js';
 
 const processName = 'jsyncd';
 
-parseOptionsAndRunProgram();
+await parseOptionsAndRunProgram();
 
 async function parseOptionsAndRunProgram() {
-  const optionParser = new JsyncdOptionParser({
-    processName: processName,
-  });
+  const optionParser = new JsyncdOptionParser(processName);
 
-  await optionParser.parse().catch((err) => {
+  const value = await optionParser.parseAsync().catch((err) => {
     console.log(`Error parsing cli options: ${err.message}`);
     process.exit();
   });
 
-// console.log(optionParser.configFilePath.value())
-  const configFilePath = optionParser.configFilePath.value();
+  const options = optionParser.opts();
+
+  if (options.kill) {
+    await optionParser.killRunningProcesses();
+
+    if (typeof options.kill !== 'boolean' && options.kill !== '0') {
+      console.log(`Ending process due to option: -k=${options.kill}`);
+      process.exit();
+    }
+  }
+
+  const configFilePath = options.configFile;
 
   const configObj = await import(path.resolve(configFilePath)).catch((err) => {
     console.log(chalk.red(`Problem reading or parsing configuration file: ${configFilePath}.`));
@@ -40,17 +48,17 @@ async function parseOptionsAndRunProgram() {
     process.exit(1);
   }
 
-  config.logFile = resolveHome(optionParser.logFile.value() || config.logFile);
+  config.logFile = resolveHome(options.logFile || config.logFile);
 
-  if (optionParser.ignoreInitial.value()) {
+  if (options.ignoreInitial) {
     config.chokidarWatchOptions.ignoreInitial = true;
   }
 
-  if (optionParser.debug.value()) {
+  if (options.debug) {
     config.debug = true;
   }
 
-  if (optionParser.daemon.value() || config.daemonize) {
+  if (options.daemon || config.daemonize) {
     if (!config.logFile) {
       console.log(chalk.red('-l, --log option required when using daemonize'));
       process.exit();
@@ -84,9 +92,9 @@ async function parseOptionsAndRunProgram() {
 }
 
 // Allow ~/ syntax to define a log file path
-function resolveHome(filepath: string) {
-    if (filepath[0] === '~' && process.env.HOME) {
-        return path.join(process.env.HOME, filepath.slice(1));
-    }
-    return filepath;
+function resolveHome(filepath: string = '') {
+  if (filepath && filepath[0] === '~' && process.env.HOME) {
+    return path.join(process.env.HOME, filepath.slice(1));
+  }
+  return filepath;
 }
