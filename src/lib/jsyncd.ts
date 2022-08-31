@@ -88,13 +88,13 @@ class Jsyncd {
       throw new ConfigFileError(`Invalid or empty config.appConfig[${appIndex}].directories[]`);
     }
 
-    let chokidarWatchOptions = {
+    const chokidarWatchOptions = {
       ...config.chokidarWatchOptions,
       ...appConfig.chokidarWatchOptions,
     };
 
     // Expect the ssh options to be exact key/value pairs that match the ssh manual
-    let shellOptionsArray = Object.entries(appConfig.sshShellOptions || {});
+    const shellOptionsArray = Object.entries(appConfig.sshShellOptions || {});
 
     shellOptionsArray.forEach(entry => entry.forEach(e => {
       const t = typeof e;
@@ -108,10 +108,10 @@ class Jsyncd {
     const sshObjString = shellOptionsArray.map(entry => entry.filter(e => String(e) !== '').join(' ')).join(' ');
     const remoteHostUri = this.buildRemoteURI(appConfig.targetHostname, appConfig.targetUsername);
 
-    let activeDirectorySyncs: Array<DirectorySyncStatus> = [];
+    const activeDirectorySyncs: Array<DirectorySyncStatus> = [];
 
     applicationDirectories.forEach((directoryConfig, directoryIndex) => {
-      let rsyncBuildOptions = {
+      const rsyncBuildOptions = {
         ...config.rsyncBuildOptions,
         ...appConfig.rsyncBuildOptions,
         ...directoryConfig,
@@ -137,7 +137,7 @@ class Jsyncd {
 
       const sourcePath = rsyncBuildOptions.source;
 
-      let appName = appConfig.name && ` ${appConfig.name}:[${directoryIndex + 1}]`;
+      const appName = appConfig.name && ` ${appConfig.name}:[${directoryIndex + 1}]`;
 
       const modColors =  directoryIndex % availableChalkColors.length;
       const chalkColorFunc = availableChalkColors[modColors];
@@ -183,7 +183,7 @@ class Jsyncd {
   }
 
   async buildAndRunRsync(rsyncBuildOptions: RsyncBuildOptions, chalkColorFunc:  chalk.Chalk | undefined, appName='') {
-    let rsync = Rsync.build(rsyncBuildOptions);
+    const rsync = Rsync.build(rsyncBuildOptions);
 
     this.sendToLog(`${this.getTimestamp()}${appName} Calling rsync for ${rsyncBuildOptions.source} -> ${rsyncBuildOptions.destination}`, chalkColorFunc);
     this.sendDebugToLog(rsync.command(), chalkColorFunc);
@@ -192,7 +192,7 @@ class Jsyncd {
 
     rsync.output(
       (stdoutHandle: Buffer) => {
-        let [outputContent, syncSuccess] = this.parseRsyncOutHandle(stdoutHandle);
+        const [outputContent, syncSuccess] = this.parseRsyncOutHandle(stdoutHandle);
 
         if (!outputFirstLine && syncSuccess) {
           this.sendToLog(`${this.getTimestamp()}${appName} Syncing new/modified files/dirs`, chalkColorFunc);
@@ -202,7 +202,7 @@ class Jsyncd {
         this.sendToLog(outputContent, chalkColorFunc);
       },
       (stderrHandle: Buffer) => {
-        let [outputContent] = this.parseRsyncOutHandle(stderrHandle);
+        const [outputContent] = this.parseRsyncOutHandle(stderrHandle);
 
         this.sendWarningToLog(`${this.getTimestamp()}${appName} Rsync error content:`);
         this.sendErrorToLog(`${outputContent}`);
@@ -226,11 +226,11 @@ class Jsyncd {
 
   parseRsyncOutHandle(fileHandle: Buffer):[string, boolean] {
     // rsync with the -i option has a coded description of the changes at the beginning of the filename. Just trim that off.
-    let rsyncOutputRegex = this._rsyncOutputRegex;
+    const rsyncOutputRegex = this._rsyncOutputRegex;
 
-    let rsyncOutString = fileHandle.toString().trim();
+    const rsyncOutString = fileHandle.toString().trim();
 
-    let formattedOutput = rsyncOutString.replace(rsyncOutputRegex, '').replace(this._rsyncStartOfLineRegex, ' '.repeat(4));
+    const formattedOutput = rsyncOutString.replace(rsyncOutputRegex, '').replace(this._rsyncStartOfLineRegex, ' '.repeat(4));
     return [formattedOutput, rsyncOutString.match(rsyncOutputRegex) ? true : false];
   }
 
