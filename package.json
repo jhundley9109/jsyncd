@@ -30,7 +30,8 @@
     "prestart": "npm run tsc",
     "start": "node ./build/bin/index.js ",
     "build": "npm run tsc",
-    "tsc": "tsc"
+    "tsc": "tsc",
+    "lint": "eslint . --ext ts"
   },
   "repository": {
     "type": "git",
