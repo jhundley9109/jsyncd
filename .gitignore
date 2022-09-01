@@ -3,6 +3,5 @@
 node_modules
 *.swp
 *.sublime-workspace
-*.sublime-project
 .vstags
 *.code-workspace

@@ -1,0 +1,18 @@
+{
+    "folders":
+    [
+        {
+            "folder_exclude_patterns": ["node_modules", ".git"],
+            "binary_file_patterns": ["build/*", "tsconfig.tsbuildinfo"],
+            // "file_exclude_patterns": ["tsconfig.tsbuildinfo"],
+            "path": "."
+        },
+        {
+            "path": "~/.config/jsyncd"
+        },
+    ],
+    "settings": {
+        "tab_size": 2,
+        "translate_tabs_to_spaces": true,
+    }
+}
