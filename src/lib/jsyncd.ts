@@ -34,8 +34,8 @@ interface AppConfig {
 }
 
 interface DirectorySyncStatus {
-  syncing: boolean;
-  firstSyncComplete: boolean;
+  syncing?: boolean;
+  firstSyncComplete?: boolean;
 }
 
 interface RsyncBuildOptions {
@@ -132,7 +132,7 @@ class Jsyncd {
       rsyncBuildOptions.destination = remoteHostUri + rsyncBuildOptions.destination;
       rsyncBuildOptions.shell = sshObjString && `ssh ${sshObjString}`;
 
-      const directorySyncStatus: DirectorySyncStatus = {syncing: false, firstSyncComplete: false};
+      const directorySyncStatus: DirectorySyncStatus = {};
       activeDirectorySyncs.push(directorySyncStatus);
 
       const sourcePath = rsyncBuildOptions.source;

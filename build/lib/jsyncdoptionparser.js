@@ -1,7 +1,6 @@
 import os from 'os';
 import * as fs from 'fs';
 import path from 'path';
-// import OptionParser from 'option-parser';
 import { Command } from 'commander';
 import find from 'find-process';
 class JsyncdOptionParser extends Command {
@@ -9,7 +8,7 @@ class JsyncdOptionParser extends Command {
         super();
         this._processName = processName;
         const defaultConfigFilePath = path.join(os.homedir(), '.config', processName, 'config.mjs');
-        this.option('-c, --configFile <configFilePath>', `Config file path.`, defaultConfigFilePath);
+        this.option('-c, --configFile <configFilePath>', 'Config file path.', defaultConfigFilePath);
         this.option('-d, --daemon', 'Detach and daemonize the process');
         this.option('-D, --debug', 'Log the generated `Rsync.build` command');
         this.option('-i, --ignore', 'Pass `ignoreInitial` to `chokidarWatchOptions`');
@@ -30,8 +29,8 @@ class JsyncdOptionParser extends Command {
             return [];
         });
         let killedProcess = false;
-        for (let processInfo of processList) {
-            let runningProcessPid = processInfo.pid;
+        for (const processInfo of processList) {
+            const runningProcessPid = processInfo.pid;
             // Skip if the looking at the currently running process or if the process is running in test mode.
             if (runningProcessPid === pid || processInfo.cmd.includes('nodemon')) {
                 continue;

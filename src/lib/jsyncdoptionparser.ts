@@ -1,8 +1,7 @@
 import os from 'os';
 import * as fs from 'fs';
 import path from 'path';
-// import OptionParser from 'option-parser';
-import { Command } from 'commander';
+import {Command} from 'commander';
 import find from 'find-process';
 
 class JsyncdOptionParser extends Command {

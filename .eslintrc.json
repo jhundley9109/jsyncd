@@ -37,6 +37,7 @@
     ],
     "no-invalid-this": [
       "error"
-    ]
+    ],
+    "object-curly-spacing": 2
   }
 }

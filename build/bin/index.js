@@ -8,7 +8,7 @@ const processName = 'jsyncd';
 await parseOptionsAndRunProgram();
 async function parseOptionsAndRunProgram() {
     const optionParser = new JsyncdOptionParser(processName);
-    const value = await optionParser.parseAsync().catch((err) => {
+    await optionParser.parseAsync().catch((err) => {
         console.log(`Error parsing cli options: ${err.message}`);
         process.exit();
     });
@@ -23,7 +23,7 @@ async function parseOptionsAndRunProgram() {
     const configFilePath = options.configFile;
     const configObj = await import(path.resolve(configFilePath)).catch((err) => {
         console.log(chalk.red(`Problem reading or parsing configuration file: ${configFilePath}.`));
-        console.log(chalk.green(`To create skeleton config file run this command:`));
+        console.log(chalk.green('To create skeleton config file run this command:'));
         console.log(chalk.green(`    mkdir -p ${path.dirname(configFilePath)}; cp config_example.mjs ${configFilePath};`));
         console.log(`${err}`);
         process.exit(1);
