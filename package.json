@@ -1,6 +1,6 @@
 {
   "name": "jsyncd",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "type": "module",
   "description": "live file monitor and rsync daemon",
   "dependencies": {
@@ -9,7 +9,7 @@
     "commander": "^11.0.0",
     "daemon": "^1.1.0",
     "find-process": "^1.4.7",
-    "rsync": "github:jhundley9109/rsync"
+    "rsync2": "^2.0.2"
   },
   "devDependencies": {
     "@types/node": "^20.5.1",
