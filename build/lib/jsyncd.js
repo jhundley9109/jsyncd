@@ -1,4 +1,4 @@
-import { Rsync } from 'rsync';
+import { Rsync } from 'rsync2';
 import chokidar from 'chokidar';
 import { open as fsopen } from 'node:fs/promises';
 import * as fs from 'node:fs';
