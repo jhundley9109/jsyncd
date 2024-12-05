@@ -5,3 +5,4 @@ node_modules
 *.sublime-workspace
 .vstags
 *.code-workspace
+*.tsbuildinfo
