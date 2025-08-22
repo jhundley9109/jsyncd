@@ -83,13 +83,13 @@ class Jsyncd {
             const modColors = directoryIndex % availableChalkColors.length;
             const chalkColorFunc = availableChalkColors[modColors];
             const watcher = chokidar.watch(sourcePath, chokidarWatchOptions).on('all', (event, localFileDir) => {
-                // this.sendDebugToLog(`Chokidar event: ${chalk.yellow(event)} Monitored Path: ${chalk.yellow(localFileDir)}`, chalkColorFunc);
+                this.sendDebugToLog(`Chokidar event: ${chalk.yellow(event)} Monitored Path: ${chalk.yellow(localFileDir)}`, chalkColorFunc);
                 // only listen for these events for now.
                 if (event !== 'addDir' && event !== 'change' && event !== 'add') {
                     return;
                 }
                 if (directorySyncStatus.syncing) {
-                    // this.sendDebugToLog(`Warning: A sync is already queued for ${chalk.green(sourcePath)} Skipping...`, chalkColorFunc);
+                    this.sendDebugToLog(`Warning: A sync is already queued for ${chalk.green(sourcePath)} Skipping...`, chalkColorFunc);
                     return;
                 }
                 const activeSyncArray = Object.values(activeDirectorySyncs).filter(directorySyncInfo => directorySyncInfo.syncing);
@@ -97,16 +97,19 @@ class Jsyncd {
                     this.sendToLog('\n');
                 }
                 directorySyncStatus.syncing = true;
-                this.buildAndRunRsync(rsyncBuildOptions, chalkColorFunc, appName).then(() => {
-                    if (directorySyncStatus.firstSyncComplete) {
-                        directorySyncStatus.syncing = false;
-                    }
-                    else {
-                        watcher.on('ready', () => {
+                setTimeout(() => {
+                    // console.log("done waiting...");
+                    this.buildAndRunRsync(rsyncBuildOptions, chalkColorFunc, appName).then(() => {
+                        if (directorySyncStatus.firstSyncComplete) {
                             directorySyncStatus.syncing = false;
-                        });
-                    }
-                });
+                        }
+                        else {
+                            watcher.on('ready', () => {
+                                directorySyncStatus.syncing = false;
+                            });
+                        }
+                    });
+                }, config.syncDelay || 0);
             });
             // When chokidar.ignoreInitial is false, it does a complete scan of all the files and folders under the directory structure.
             // This can take a while. Only run one rsync during that phase.
