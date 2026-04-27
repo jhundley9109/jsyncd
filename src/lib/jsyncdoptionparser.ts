@@ -1,7 +1,7 @@
 import os from 'os';
 import * as fs from 'fs';
 import path from 'path';
-import {Command} from 'commander';
+import { Command } from 'commander';
 import find from 'find-process';
 
 class JsyncdOptionParser extends Command {
@@ -22,7 +22,7 @@ class JsyncdOptionParser extends Command {
     this.option('-l, --logFile <logFilePath>', 'Log file path');
     this.option('-v, --version', 'Display version information and exit', () => {
       const packageJsonPath = new URL('../../package.json', import.meta.url);
-      const {version} = JSON.parse(fs.readFileSync(packageJsonPath).toString());
+      const { version } = JSON.parse(fs.readFileSync(packageJsonPath).toString());
       console.log(`${processName} version ${version}`);
       process.exit();
     });

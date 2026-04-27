@@ -1,10 +1,10 @@
-import {Rsync} from 'rsync2';
+import { Rsync } from 'rsync2';
 import chokidar from 'chokidar';
-import {open as fsopen} from 'node:fs/promises';
+import { open as fsopen } from 'node:fs/promises';
 import * as fs from 'node:fs';
-import chalk from 'chalk';
+import chalk, { type ChalkInstance } from 'chalk';
 
-const availableChalkColors: Array<chalk.Chalk> = [
+const availableChalkColors: Array<ChalkInstance> = [
   chalk.hex('#FFAAAA'),
   chalk.blue,
   chalk.magenta,
@@ -187,7 +187,7 @@ class Jsyncd {
     });
   }
 
-  async buildAndRunRsync(rsyncBuildOptions: RsyncBuildOptions, chalkColorFunc:  chalk.Chalk | undefined, appName='') {
+  async buildAndRunRsync(rsyncBuildOptions: RsyncBuildOptions, chalkColorFunc: ChalkInstance | undefined, appName='') {
     const rsync = Rsync.build(rsyncBuildOptions);
 
     this.sendToLog(`${this.getTimestamp()}${appName} Calling rsync for ${rsyncBuildOptions.source} -> ${rsyncBuildOptions.destination}`, chalkColorFunc);
@@ -247,11 +247,11 @@ class Jsyncd {
     this.sendToLog(contentToLog, chalk.yellow);
   }
 
-  sendDebugToLog(contentToLog: string, chalkFunction: chalk.Chalk | undefined = undefined) {
+  sendDebugToLog(contentToLog: string, chalkFunction: ChalkInstance | undefined = undefined) {
     this._config.debug && this.sendToLog(contentToLog, chalkFunction);
   }
 
-  sendToLog(contentToLog: string, chalkFunction: chalk.Chalk | undefined = undefined) {
+  sendToLog(contentToLog: string, chalkFunction: ChalkInstance | undefined = undefined) {
     if (this._logFileHandle) {
       this._logFileHandle.write(contentToLog + '\n');
     } else {

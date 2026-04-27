@@ -67,7 +67,7 @@ async function parseOptionsAndRunProgram() {
     console.log(chalk.yellow(`Process will detach. Output logged to '${config.logFile}'`));
 
     // pass cwd to work around an issue with the library passing the function process.cwd instead of the result
-    daemon({cwd: process.cwd()});
+    daemon({ cwd: process.cwd() });
   }
 
   process.title = `${processName} ${configFilePath}`;
