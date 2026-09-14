@@ -2,9 +2,9 @@ import { Rsync } from 'rsync2';
 import chokidar from 'chokidar';
 import { open as fsopen } from 'node:fs/promises';
 import * as fs from 'node:fs';
-import chalk, { type ChalkInstance } from 'chalk';
+import chalk from 'chalk';
 
-const availableChalkColors: Array<ChalkInstance> = [
+const availableChalkColors: Array<chalk.Chalk> = [
   chalk.hex('#FFAAAA'),
   chalk.blue,
   chalk.magenta,
@@ -43,6 +43,11 @@ interface RsyncBuildOptions {
   source: string;
   destination: string;
   shell: string;
+  set: SetOption[];
+}
+
+interface SetOption {
+
 }
 
 class Jsyncd {
@@ -54,8 +59,8 @@ class Jsyncd {
   constructor(config: JsyncdConfig) {
     this._config = config;
     this._logFileHandle = null;
-    this._rsyncOutputRegex = new RegExp(/^((<f\S*)|(cd\S*)) /gm);
-    this._rsyncStartOfLineRegex = new RegExp(/^/gm);
+    this._rsyncOutputRegex = /^((<f\S*)|(cd\S*)) /gm;
+    this._rsyncStartOfLineRegex = /^/gm;
   }
 
   async startSync() {
@@ -68,13 +73,13 @@ class Jsyncd {
     }
 
     if (config.logFile) {
-      await fsopen(config.logFile, 'a').then((tempLogHandle) => {
+      try {
+        this._logFileHandle = await fsopen(config.logFile, 'a');
         console.log(`Sending logs to ${config.logFile}`);
-        this._logFileHandle = tempLogHandle;
-      }).catch((err) => {
+      } catch (err: any) {
         err.type = `Error writing to '${config.logFile}'. Ensure file exists and is writable.`;
         throw err;
-      });
+      }
     }
 
     apps.forEach((appConfig, appIndex) => this.syncApp(appConfig, appIndex));
@@ -156,7 +161,7 @@ class Jsyncd {
           return;
         }
 
-        const activeSyncArray = Object.values(activeDirectorySyncs).filter(directorySyncInfo => directorySyncInfo.syncing);
+        const activeSyncArray = activeDirectorySyncs.filter(directorySyncInfo => directorySyncInfo.syncing);
 
         if (!activeSyncArray.length) {
           this.sendToLog('\n');
@@ -175,6 +180,9 @@ class Jsyncd {
                 directorySyncStatus.syncing = false;
               });
             }
+          }).catch((err) => {
+            this.sendErrorToLog(`${this.getTimestamp()}${appName} Rsync failed: ${err}`);
+            directorySyncStatus.syncing = false;
           });
         }, config.syncDelay || 0);
       });
@@ -187,8 +195,12 @@ class Jsyncd {
     });
   }
 
-  async buildAndRunRsync(rsyncBuildOptions: RsyncBuildOptions, chalkColorFunc: ChalkInstance | undefined, appName='') {
+  async buildAndRunRsync(rsyncBuildOptions: RsyncBuildOptions, chalkColorFunc: chalk.Chalk | undefined, appName='') {
     const rsync = Rsync.build(rsyncBuildOptions);
+
+    // rsyncBuildOptions.set && rsyncBuildOptions.set.forEach((setOption) => {
+    //   rsync.set(setOption)
+    // })
 
     this.sendToLog(`${this.getTimestamp()}${appName} Calling rsync for ${rsyncBuildOptions.source} -> ${rsyncBuildOptions.destination}`, chalkColorFunc);
     this.sendDebugToLog(rsync.command(), chalkColorFunc);
@@ -236,7 +248,7 @@ class Jsyncd {
     const rsyncOutString = fileHandle.toString().trim();
 
     const formattedOutput = rsyncOutString.replace(rsyncOutputRegex, '').replace(this._rsyncStartOfLineRegex, ' '.repeat(4));
-    return [formattedOutput, rsyncOutString.match(rsyncOutputRegex) ? true : false];
+    return [formattedOutput, Boolean(rsyncOutString.match(rsyncOutputRegex))];
   }
 
   sendErrorToLog(contentToLog: string) {
@@ -247,11 +259,11 @@ class Jsyncd {
     this.sendToLog(contentToLog, chalk.yellow);
   }
 
-  sendDebugToLog(contentToLog: string, chalkFunction: ChalkInstance | undefined = undefined) {
+  sendDebugToLog(contentToLog: string, chalkFunction: chalk.Chalk | undefined = undefined) {
     this._config.debug && this.sendToLog(contentToLog, chalkFunction);
   }
 
-  sendToLog(contentToLog: string, chalkFunction: ChalkInstance | undefined = undefined) {
+  sendToLog(contentToLog: string, chalkFunction: chalk.Chalk | undefined = undefined) {
     if (this._logFileHandle) {
       this._logFileHandle.write(contentToLog + '\n');
     } else {

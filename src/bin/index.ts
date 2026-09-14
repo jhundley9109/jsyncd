@@ -15,7 +15,7 @@ async function parseOptionsAndRunProgram() {
 
   await optionParser.parseAsync().catch((err) => {
     console.log(`Error parsing cli options: ${err.message}`);
-    process.exit();
+    process.exit(1);
   });
 
   const options = optionParser.opts();
@@ -25,7 +25,7 @@ async function parseOptionsAndRunProgram() {
 
     if (typeof options.kill !== 'boolean' && options.kill !== '0') {
       console.log(`Ending process due to option: -k=${options.kill}`);
-      process.exit();
+      process.exit(0);
     }
   }
 
@@ -61,7 +61,7 @@ async function parseOptionsAndRunProgram() {
   if (options.daemon || config.daemonize) {
     if (!config.logFile) {
       console.log(chalk.red('-l, --log option required when using daemonize'));
-      process.exit();
+      process.exit(1);
     }
 
     console.log(chalk.yellow(`Process will detach. Output logged to '${config.logFile}'`));
@@ -82,12 +82,12 @@ async function parseOptionsAndRunProgram() {
 
   process.on('SIGINT', () => {
     jsyncd.sendWarningToLog(jsyncd.getTimestamp() + ' Caught SIGINT. Terminating...');
-    process.exit();
+    process.exit(0);
   });
 
   process.on('SIGTERM', () => {
     jsyncd.sendWarningToLog(jsyncd.getTimestamp() + ' Caught SIGTERM. Terminating...');
-    process.exit();
+    process.exit(0);
   });
 }
 

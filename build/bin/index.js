@@ -10,14 +10,14 @@ async function parseOptionsAndRunProgram() {
     const optionParser = new JsyncdOptionParser(processName);
     await optionParser.parseAsync().catch((err) => {
         console.log(`Error parsing cli options: ${err.message}`);
-        process.exit();
+        process.exit(1);
     });
     const options = optionParser.opts();
     if (options.kill) {
         await optionParser.killRunningProcesses();
         if (typeof options.kill !== 'boolean' && options.kill !== '0') {
             console.log(`Ending process due to option: -k=${options.kill}`);
-            process.exit();
+            process.exit(0);
         }
     }
     const configFilePath = options.configFile;
@@ -44,7 +44,7 @@ async function parseOptionsAndRunProgram() {
     if (options.daemon || config.daemonize) {
         if (!config.logFile) {
             console.log(chalk.red('-l, --log option required when using daemonize'));
-            process.exit();
+            process.exit(1);
         }
         console.log(chalk.yellow(`Process will detach. Output logged to '${config.logFile}'`));
         // pass cwd to work around an issue with the library passing the function process.cwd instead of the result
@@ -59,11 +59,11 @@ async function parseOptionsAndRunProgram() {
     });
     process.on('SIGINT', () => {
         jsyncd.sendWarningToLog(jsyncd.getTimestamp() + ' Caught SIGINT. Terminating...');
-        process.exit();
+        process.exit(0);
     });
     process.on('SIGTERM', () => {
         jsyncd.sendWarningToLog(jsyncd.getTimestamp() + ' Caught SIGTERM. Terminating...');
-        process.exit();
+        process.exit(0);
     });
 }
 // Allow ~/ syntax to define a log file path

@@ -2,7 +2,8 @@ import os from 'os';
 import * as fs from 'fs';
 import path from 'path';
 import { Command } from 'commander';
-import find from 'find-process';
+import findProcess from 'find-process';
+const find = findProcess.default ?? findProcess;
 
 class JsyncdOptionParser extends Command {
   _processName: string;

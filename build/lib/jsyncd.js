@@ -17,8 +17,8 @@ class Jsyncd {
     constructor(config) {
         this._config = config;
         this._logFileHandle = null;
-        this._rsyncOutputRegex = new RegExp(/^((<f\S*)|(cd\S*)) /gm);
-        this._rsyncStartOfLineRegex = new RegExp(/^/gm);
+        this._rsyncOutputRegex = /^((<f\S*)|(cd\S*)) /gm;
+        this._rsyncStartOfLineRegex = /^/gm;
     }
     async startSync() {
         const config = this._config;
@@ -27,13 +27,14 @@ class Jsyncd {
             throw new ConfigFileError('Invalid or empty config.appConfigs');
         }
         if (config.logFile) {
-            await fsopen(config.logFile, 'a').then((tempLogHandle) => {
+            try {
+                this._logFileHandle = await fsopen(config.logFile, 'a');
                 console.log(`Sending logs to ${config.logFile}`);
-                this._logFileHandle = tempLogHandle;
-            }).catch((err) => {
+            }
+            catch (err) {
                 err.type = `Error writing to '${config.logFile}'. Ensure file exists and is writable.`;
                 throw err;
-            });
+            }
         }
         apps.forEach((appConfig, appIndex) => this.syncApp(appConfig, appIndex));
     }
@@ -92,7 +93,7 @@ class Jsyncd {
                     this.sendDebugToLog(`Warning: A sync is already queued for ${chalk.green(sourcePath)} Skipping...`, chalkColorFunc);
                     return;
                 }
-                const activeSyncArray = Object.values(activeDirectorySyncs).filter(directorySyncInfo => directorySyncInfo.syncing);
+                const activeSyncArray = activeDirectorySyncs.filter(directorySyncInfo => directorySyncInfo.syncing);
                 if (!activeSyncArray.length) {
                     this.sendToLog('\n');
                 }
@@ -108,6 +109,9 @@ class Jsyncd {
                                 directorySyncStatus.syncing = false;
                             });
                         }
+                    }).catch((err) => {
+                        this.sendErrorToLog(`${this.getTimestamp()}${appName} Rsync failed: ${err}`);
+                        directorySyncStatus.syncing = false;
                     });
                 }, config.syncDelay || 0);
             });
@@ -120,6 +124,9 @@ class Jsyncd {
     }
     async buildAndRunRsync(rsyncBuildOptions, chalkColorFunc, appName = '') {
         const rsync = Rsync.build(rsyncBuildOptions);
+        // rsyncBuildOptions.set && rsyncBuildOptions.set.forEach((setOption) => {
+        //   rsync.set(setOption)
+        // })
         this.sendToLog(`${this.getTimestamp()}${appName} Calling rsync for ${rsyncBuildOptions.source} -> ${rsyncBuildOptions.destination}`, chalkColorFunc);
         this.sendDebugToLog(rsync.command(), chalkColorFunc);
         let outputFirstLine = false;
@@ -151,7 +158,7 @@ class Jsyncd {
         const rsyncOutputRegex = this._rsyncOutputRegex;
         const rsyncOutString = fileHandle.toString().trim();
         const formattedOutput = rsyncOutString.replace(rsyncOutputRegex, '').replace(this._rsyncStartOfLineRegex, ' '.repeat(4));
-        return [formattedOutput, rsyncOutString.match(rsyncOutputRegex) ? true : false];
+        return [formattedOutput, Boolean(rsyncOutString.match(rsyncOutputRegex))];
     }
     sendErrorToLog(contentToLog) {
         this.sendToLog(contentToLog, chalk.red);
